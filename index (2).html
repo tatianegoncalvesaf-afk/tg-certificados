@@ -1,0 +1,2569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TG Certificados — v30</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #070b14;
+  --bg2: #0d1220;
+  --bg3: #131929;
+  --border: #1a2540;
+  --border2: #243055;
+  --text: #e4ecff;
+  --text2: #7a90b8;
+  --text3: #3d5070;
+  --accent: #4f8eff;
+  --accent2: #7c5cfc;
+  --green: #00d68f;
+  --red: #ff4d6a;
+  --orange: #ff8c42;
+  --yellow: #ffd166;
+  --purple: #b07dff;
+  --teal: #00c9d4;
+  --whatsapp: #25d366;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* LAYOUT */
+.app{display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.logo{font-size:17px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;}
+.version-tag{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:11px;font-family:'JetBrains Mono',monospace;padding:2px 8px;border-radius:20px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.sync-badge{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 12px;border-radius:20px;font-weight:500;}
+.sync-badge.ok{background:rgba(46,204,138,0.12);color:var(--green);border:1px solid rgba(46,204,138,0.25);}
+.sync-badge.warn{background:rgba(245,148,60,0.12);color:var(--orange);border:1px solid rgba(245,148,60,0.25);}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+
+.main{display:flex;flex:1;}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;position:sticky;top:60px;height:calc(100vh - 56px);overflow-y:auto;}
+.sidebar-section{padding:6px 16px 4px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-top:8px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-radius:0;font-size:13px;color:var(--text2);transition:all 0.15s;border-left:3px solid transparent;user-select:none;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:rgba(108,142,245,0.1);color:var(--accent);border-left-color:var(--accent);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-badge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;min-width:20px;text-align:center;}
+
+.content{flex:1;overflow:auto;}
+.page{display:none;padding:24px;}
+.page.active{display:block;}
+
+/* CARDS */
+.page-header{margin-bottom:24px;}
+.page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+.page-sub{color:var(--text2);font-size:13px;}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;transition:transform 0.2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.stat-card.total::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.stat-card.vencido::before{background:var(--red);}
+.stat-card.urgente::before{background:var(--orange);}
+.stat-card.atencao::before{background:var(--yellow);}
+.stat-card.emdia::before{background:var(--green);}
+.stat-card.inativo::before{background:var(--text3);}
+.stat-card.receita::before{background:linear-gradient(90deg,var(--green),var(--teal));}
+.stat-label{font-size:11px;color:var(--text2);font-weight:500;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.stat-value{font-size:30px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1;}
+.stat-card.total .stat-value{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.stat-card.vencido .stat-value{color:var(--red);}
+.stat-card.urgente .stat-value{color:var(--orange);}
+.stat-card.atencao .stat-value{color:var(--yellow);}
+.stat-card.emdia .stat-value{color:var(--green);}
+.stat-card.inativo .stat-value{color:var(--text2);}
+.stat-card.receita .stat-value{color:var(--green);font-size:20px;}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:6px;}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:24px;}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:16px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;}
+.chart-wrap{position:relative;height:200px;}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:white;}
+.btn-primary:hover{background:#5a7ef3;transform:translateY(-1px);}
+.btn-green{background:var(--green);color:#0f1117;}
+.btn-green:hover{background:#25b878;}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--border);color:var(--text);}
+.btn-whatsapp{background:var(--whatsapp);color:white;}
+.btn-whatsapp:hover{background:#20ba5a;}
+.btn-danger{background:rgba(240,94,106,0.15);color:var(--red);border:1px solid rgba(240,94,106,0.3);}
+.btn-danger:hover{background:rgba(240,94,106,0.25);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;}
+
+/* FILTERS */
+.filters-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;}
+.filter-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.15s;font-weight:500;}
+.chip:hover{border-color:var(--border2);color:var(--text);}
+.chip.active{background:var(--accent);border-color:var(--accent);color:white;}
+.chip.v.active{background:var(--red);border-color:var(--red);color:white;}
+.chip.u.active{background:var(--orange);border-color:var(--orange);color:white;}
+.chip.a.active{background:var(--yellow);border-color:var(--yellow);color:#111;}
+.chip.e.active{background:var(--green);border-color:var(--green);color:#0f1117;}
+.chip.i.active{background:var(--text3);border-color:var(--text3);color:white;}
+.search-wrap{position:relative;flex:1;min-width:200px;max-width:320px;}
+.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px 7px 34px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;}
+.search-wrap input:focus{outline:none;border-color:var(--accent);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;}
+
+/* TABLE */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:auto;}
+table{width:100%;border-collapse:collapse;min-width:900px;}
+thead{background:var(--bg3);border-bottom:1px solid var(--border);}
+th{padding:11px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;}
+td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tbody tr:hover{background:rgba(255,255,255,0.02);}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr.inativo-row td{opacity:0.6;}
+.empty{padding:48px;text-align:center;color:var(--text3);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.badge-vencido{background:rgba(240,94,106,0.15);color:var(--red);border:1px solid rgba(240,94,106,0.3);}
+.badge-urgente{background:rgba(245,148,60,0.15);color:var(--orange);border:1px solid rgba(245,148,60,0.3);}
+.badge-atencao{background:rgba(245,200,66,0.15);color:var(--yellow);border:1px solid rgba(245,200,66,0.3);}
+.badge-emdia{background:rgba(46,204,138,0.15);color:var(--green);border:1px solid rgba(46,204,138,0.3);}
+.badge-inativo{background:rgba(74,85,104,0.2);color:var(--text2);border:1px solid var(--border);}
+.badge-nc{background:rgba(74,85,104,0.2);color:var(--text2);border:1px solid var(--border);}
+.badge-contatado{background:rgba(108,142,245,0.15);color:var(--accent);border:1px solid rgba(108,142,245,0.3);}
+.badge-respondeu{background:rgba(46,204,138,0.15);color:var(--green);border:1px solid rgba(46,204,138,0.3);}
+.badge-agendado{background:rgba(245,200,66,0.15);color:var(--yellow);border:1px solid rgba(245,200,66,0.3);}
+.badge-renovando{background:rgba(139,108,245,0.15);color:var(--purple);border:1px solid rgba(139,108,245,0.3);}
+.badge-concluido{background:rgba(34,211,238,0.15);color:var(--teal);border:1px solid rgba(34,211,238,0.3);}
+.badge-pago{background:rgba(46,204,138,0.15);color:var(--green);}
+.badge-pendente{background:rgba(240,94,106,0.15);color:var(--red);}
+.badge-parcial{background:rgba(245,200,66,0.15);color:var(--yellow);}
+.badge-ni{background:rgba(74,85,104,0.2);color:var(--text2);}
+.badge-pf{background:rgba(108,142,245,0.15);color:var(--accent);}
+.badge-pj{background:rgba(167,139,250,0.15);color:var(--purple);}
+
+/* SITUAÇÃO ATIVO/INATIVO */
+.badge-ativo{background:rgba(0,214,143,0.12);color:var(--green);border:1px solid rgba(0,214,143,0.25);}
+.badge-sit-inativo{background:rgba(74,85,104,0.2);color:var(--text2);border:1px solid var(--border);}
+
+/* TOGGLE ATIVO/INATIVO */
+.btn-toggle-ativo{background:rgba(0,214,143,0.12);color:var(--green);border:1px solid rgba(0,214,143,0.25);padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
+.btn-toggle-ativo:hover{background:rgba(0,214,143,0.25);}
+.btn-toggle-inativo{background:rgba(61,80,112,0.2);color:var(--text2);border:1px solid var(--border);padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
+.btn-toggle-inativo:hover{background:rgba(255,77,106,0.12);color:var(--red);border-color:rgba(255,77,106,0.25);}
+
+/* ACTION ICONS */
+.actions{display:flex;gap:6px;align-items:center;}
+.act{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:15px;transition:background 0.15s;line-height:1;}
+.act:hover{background:var(--bg3);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;overflow-y:auto;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);}
+.modal-header{padding:22px 24px 0;display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:17px;font-weight:700;}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--text2);font-size:20px;padding:4px;border-radius:6px;line-height:1;}
+.modal-close:hover{background:var(--bg3);color:var(--text);}
+.modal-body{padding:20px 24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+
+/* FORM */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.form-row.one{grid-template-columns:1fr;}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;transition:border-color 0.15s;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);}
+.form-group textarea{resize:vertical;min-height:80px;}
+.form-group select option{background:var(--bg2);}
+.form-section{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;}
+.form-section-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
+.option-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+.option-btn{padding:8px 10px;border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);background:var(--bg2);text-align:center;transition:all 0.15s;font-family:'Plus Jakarta Sans',sans-serif;}
+.option-btn:hover{border-color:var(--border2);color:var(--text);}
+.option-btn.sel{border-color:var(--accent);background:rgba(108,142,245,0.1);color:var(--accent);}
+.cnpj-row{display:flex;gap:8px;}
+.cnpj-row input{flex:1;}
+.cnpj-hint{font-size:11px;margin-top:4px;min-height:16px;}
+
+/* HISTÓRICO */
+.hist-list{display:flex;flex-direction:column;gap:0;}
+.hist-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);}
+.hist-item:last-child{border-bottom:none;}
+.hist-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--bg3);}
+.hist-content{flex:1;}
+.hist-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.hist-meta{font-size:11px;color:var(--text3);}
+.hist-note{font-size:12px;color:var(--text2);margin-top:4px;background:var(--bg3);padding:6px 10px;border-radius:6px;}
+.hist-add{display:flex;gap:8px;margin-bottom:16px;}
+.hist-add input,.hist-add textarea{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;flex:1;}
+.hist-add input:focus,.hist-add textarea:focus{outline:none;border-color:var(--accent);}
+
+/* MSG MODAL */
+.msg-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-size:13px;line-height:1.7;white-space:pre-wrap;max-height:260px;overflow-y:auto;color:var(--text);}
+
+/* DISPARO */
+.disparo-list{max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:16px;}
+.disparo-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;}
+.disparo-item:hover{background:var(--bg3);}
+.disparo-item:last-child{border-bottom:none;}
+.disparo-check{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.disparo-info{flex:1;}
+.disparo-nome{font-weight:600;font-size:13px;}
+.disparo-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.disparo-status{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--bg3);color:var(--text2);flex-shrink:0;}
+.disparo-status.enviando{background:rgba(108,142,245,0.15);color:var(--accent);}
+.disparo-status.enviado{background:rgba(46,204,138,0.15);color:var(--green);}
+.disparo-status.erro{background:rgba(240,94,106,0.15);color:var(--red);}
+.progress-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-bottom:8px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--teal));transition:width 0.4s;border-radius:4px;}
+.progress-text{font-size:12px;color:var(--text2);text-align:center;margin-bottom:14px;}
+
+/* Z-API PANEL */
+.panel{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--whatsapp);border-radius:var(--radius);margin-bottom:20px;}
+.panel-header{padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;}
+.panel-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.panel-body{display:none;padding:0 18px 16px;}
+.panel-body.open{display:block;}
+.zapi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.zapi-status-msg{font-size:12px;padding:8px 12px;border-radius:6px;margin-top:8px;display:none;}
+.zapi-status-msg.ok{background:rgba(46,204,138,0.1);color:var(--green);display:block;border:1px solid rgba(46,204,138,0.2);}
+.zapi-status-msg.err{background:rgba(240,94,106,0.1);color:var(--red);display:block;border:1px solid rgba(240,94,106,0.2);}
+.zapi-status-msg.info{background:rgba(108,142,245,0.1);color:var(--accent);display:block;border:1px solid rgba(108,142,245,0.2);}
+
+/* HORARIOS */
+.horario-panel{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:var(--radius);margin-bottom:20px;}
+.horario-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.horario-chip{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;position:relative;transition:all 0.15s;}
+.horario-chip.livre{background:rgba(46,204,138,0.12);color:var(--green);border:1px solid rgba(46,204,138,0.3);}
+.horario-chip.ocupado{background:rgba(240,94,106,0.12);color:var(--red);border:1px solid rgba(240,94,106,0.3);}
+.horario-chip .hc-remove{position:absolute;top:-7px;right:-7px;background:var(--red);color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1;}
+.horario-chip:hover .hc-remove{display:flex;}
+
+/* RECEITA PAGE */
+.receita-form{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+.receita-table{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:auto;}
+
+/* NOTIFICAÇÕES */
+.notif-badge{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
+.notif{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:var(--shadow);pointer-events:all;display:flex;align-items:center;gap:10px;animation:slideIn 0.3s ease;max-width:320px;}
+.notif.success{background:#1a3a2a;border:1px solid rgba(46,204,138,0.4);color:var(--green);}
+.notif.error{background:#2d1a1e;border:1px solid rgba(240,94,106,0.4);color:var(--red);}
+.notif.info{background:#1a2040;border:1px solid rgba(108,142,245,0.4);color:var(--accent);}
+@keyframes slideIn{from{transform:translateX(100px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes fadeOut{to{opacity:0;transform:translateX(20px);}}
+
+/* BELL NOTIFICATION */
+.bell-wrap{position:relative;cursor:pointer;}
+.bell-dot{position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--red);border-radius:50%;display:none;}
+.bell-dot.show{display:block;}
+.notif-dropdown{position:absolute;right:0;top:36px;width:320px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);display:none;z-index:200;}
+.notif-dropdown.open{display:block;}
+.notif-drop-header{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;}
+.notif-drop-list{max-height:300px;overflow-y:auto;}
+.notif-drop-item{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;display:flex;gap:10px;align-items:flex-start;}
+.notif-drop-item:last-child{border-bottom:none;}
+.notif-drop-item .ni-icon{font-size:18px;flex-shrink:0;}
+.notif-drop-item .ni-text{color:var(--text2);}
+.notif-drop-item .ni-title{font-weight:600;color:var(--text);margin-bottom:2px;}
+
+/* ONBOARDING */
+.ob-step{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;transition:all 0.15s;border:1px solid transparent;}
+.ob-step:hover{color:var(--text2);}
+.ob-step.active{background:rgba(108,142,245,0.15);color:var(--accent);border-color:rgba(108,142,245,0.3);}
+.ob-step.done{background:rgba(46,204,138,0.12);color:var(--green);border-color:rgba(46,204,138,0.25);}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .form-row{grid-template-columns:1fr;}
+  .zapi-grid{grid-template-columns:1fr;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+}
+
+/* ─── FINANCEIRO DASHBOARD ─── */
+.fin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-bottom:16px;}
+.fin-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;transition:transform 0.2s;}
+.fin-card:hover{transform:translateY(-2px);}
+.fin-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.fin-card.fc-venda::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.fin-card.fc-custo::before{background:var(--red);}
+.fin-card.fc-comissao::before{background:var(--purple);}
+.fin-card.fc-lucro::before{background:var(--green);}
+.fin-card.fc-cert::before{background:var(--yellow);}
+.fin-card.fc-bonus::before{background:var(--teal);}
+.fin-glow2{position:absolute;top:-20px;right:-20px;width:60px;height:60px;border-radius:50%;opacity:0.1;filter:blur(18px);}
+.fin-label{font-size:9.5px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px;}
+.fin-val{font-size:19px;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1;}
+.fin-card.fc-venda .fin-val{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.fin-card.fc-custo .fin-val{color:var(--red);}
+.fin-card.fc-comissao .fin-val{color:var(--purple);}
+.fin-card.fc-lucro .fin-val{color:var(--green);font-size:22px;}
+.fin-card.fc-cert .fin-val{color:var(--yellow);}
+.fin-card.fc-bonus .fin-val{color:var(--teal);}
+.fin-sub2{font-size:9.5px;color:var(--text3);margin-top:4px;}
+.mes-chip{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);font-size:11px;cursor:pointer;font-weight:600;transition:all 0.15s;}
+.mes-chip:hover{color:var(--text2);border-color:var(--border2);}
+.mes-chip.active{background:rgba(79,142,255,0.12);border-color:rgba(79,142,255,0.3);color:var(--accent);}
+.fin-ind-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;}
+.fin-ind-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;}
+.fin-ind-title{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;}
+.fin-ind-row{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px;}
+.fin-ind-row span:first-child{color:var(--text3);}
+.fin-ind-row span:last-child{font-weight:700;font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="logo">📋 TG Certificados</span>
+    <span class="version-tag">v30</span>
+  </div>
+  <div class="topbar-right">
+    <div class="bell-wrap" onclick="toggleNotifDropdown()">
+      <span style="font-size:20px;cursor:pointer;">🔔</span>
+      <div class="bell-dot" id="bellDot"></div>
+      <div class="notif-dropdown" id="notifDropdown">
+        <div class="notif-drop-header">Notificações de Vencimento</div>
+        <div class="notif-drop-list" id="notifList"><div style="padding:20px;text-align:center;color:var(--text3);">Nenhuma notificação</div></div>
+      </div>
+    </div>
+    <div class="sync-badge ok" id="syncBadge"><span class="dot"></span><span id="syncText">Sincronizado</span></div>
+  </div>
+</div>
+
+<div class="main">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-section">Painel</div>
+  <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">📊</span>Dashboard</div>
+  <div class="nav-item" onclick="showPage('certificados')" id="nav-certificados"><span class="nav-icon">📋</span>Certificados<span class="nav-badge" id="navBadgeVenc" style="display:none">0</span></div>
+  <div class="sidebar-section">Financeiro</div>
+  <div class="nav-item" onclick="showPage('receita')" id="nav-receita"><span class="nav-icon">💰</span>Receita & Comissões</div>
+  <div class="sidebar-section">Ferramentas</div>
+  <div class="nav-item" onclick="openModal('onboardModal')" id="nav-onboard"><span class="nav-icon">🎯</span>Novo Cliente</div>
+  <div class="nav-item" onclick="openModal('migModal')" id="nav-mig"><span class="nav-icon">🔄</span>Migrar V23/V24</div>
+  <div class="nav-item" onclick="openModal('backupModal')" id="nav-backup"><span class="nav-icon">💾</span>Backup</div>
+  <div class="nav-item" onclick="openLogDisparosModal()" id="nav-log" onclick="openLogDisparosModal()"><span class="nav-icon">📋</span>Histórico Disparos</div>
+  <div class="sidebar-section">Configurações</div>
+  <div class="nav-item" onclick="showPage('zapi')" id="nav-zapi"><span class="nav-icon">📱</span>Envio WhatsApp</div>
+  <div class="nav-item" onclick="showPage('horarios')" id="nav-horarios"><span class="nav-icon">⏰</span>Horários</div>
+</div>
+
+<!-- PAGES -->
+<div class="content">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div style="padding:24px;">
+    <div class="page-header">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Visão geral dos certificados — <span id="dashDate"></span></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card total"><div class="stat-label">Total</div><div class="stat-value" id="sTotal">0</div></div>
+      <div class="stat-card vencido"><div class="stat-label">Vencidos</div><div class="stat-value" id="sVencido">0</div></div>
+      <div class="stat-card urgente"><div class="stat-label">Urgentes ≤15d</div><div class="stat-value" id="sUrgente">0</div></div>
+      <div class="stat-card atencao"><div class="stat-label">Atenção ≤45d</div><div class="stat-value" id="sAtencao">0</div></div>
+      <div class="stat-card emdia"><div class="stat-label">Em Dia</div><div class="stat-value" id="sEmdia">0</div></div>
+      <div class="stat-card inativo"><div class="stat-label">Inativos</div><div class="stat-value" id="sInativo">0</div></div>
+      <div class="stat-card urgente" style="--orange:#ff6b9d"><div class="stat-label" style="color:rgba(255,107,157,0.8)">Sem Contato</div><div class="stat-value" id="sSemContato" style="color:#ff6b9d">0</div><div class="stat-sub">pendentes de ação</div></div>
+      <div class="stat-card receita"><div class="stat-label">Receita Estimada</div><div class="stat-value" id="sReceita">R$ 0</div><div class="stat-sub">Certificados a renovar</div></div>
+    </div>
+    <!-- Financeiro -->
+  <div style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:13px;font-weight:800;">💰 Financeiro por Mês</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="mesSel"></div>
+    </div>
+    <div class="fin-grid">
+      <div class="fin-card fc-cert"><div class="fin-glow2" style="background:var(--yellow)"></div><div class="fin-label">Certificados</div><div class="fin-val" id="finCerts">0</div><div class="fin-sub2">renovados</div></div>
+      <div class="fin-card fc-venda"><div class="fin-glow2" style="background:var(--accent)"></div><div class="fin-label">Total Vendas</div><div class="fin-val" id="finVenda">R$ 0</div><div class="fin-sub2">valor cobrado</div></div>
+      <div class="fin-card fc-custo"><div class="fin-glow2" style="background:var(--red)"></div><div class="fin-label">Custo Certif.</div><div class="fin-val" id="finCusto">R$ 0</div><div class="fin-sub2" id="finCustoSub">a pagar</div></div>
+      <div class="fin-card fc-bonus"><div class="fin-glow2" style="background:var(--teal)"></div><div class="fin-label">🎁 Bônus</div><div class="fin-val" id="finBonus">0/5</div><div class="fin-sub2" id="finBonusSub">economia</div></div>
+      <div class="fin-card fc-comissao"><div class="fin-glow2" style="background:var(--purple)"></div><div class="fin-label">Comissão Parceiro</div><div class="fin-val" id="finComissao">R$ 0</div><div class="fin-sub2" id="finComissaoSub"></div></div>
+      <div class="fin-card fc-lucro"><div class="fin-glow2" style="background:var(--green)"></div><div class="fin-label">💚 Lucro Taty</div><div class="fin-val" id="finLucro">R$ 0</div><div class="fin-sub2" id="finLucroSub">líquido</div></div>
+    </div>
+    <div class="fin-ind-grid" id="finIndGrid"></div>
+  </div>
+
+  <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Status dos Certificados</div>
+        <div class="chart-wrap"><canvas id="chartStatus"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Status de Contato</div>
+        <div class="chart-wrap"><canvas id="chartContato"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Vencimentos nos Próximos 90 dias</div>
+        <div class="chart-wrap"><canvas id="chartVenc"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Pagamentos</div>
+        <div class="chart-wrap"><canvas id="chartPgto"></canvas></div>
+      </div>
+    </div>
+    <!-- Alertas rápidos -->
+    <div id="alertasRapidos"></div>
+  </div>
+</div>
+
+<!-- CERTIFICADOS -->
+<div class="page" id="page-certificados">
+  <div style="padding:24px;">
+    <div class="page-header">
+      <div class="page-title">Certificados Digitais</div>
+      <div class="page-sub">Gerencie todos os certificados da carteira</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="openAddForm()">➕ Adicionar</button>
+      <button class="btn btn-whatsapp" onclick="abrirDisparo()">🚀 Disparo WhatsApp</button>
+      <button class="btn btn-green" onclick="exportExcel()">💾 Exportar Excel</button>
+      <label class="btn btn-ghost" style="cursor:pointer;">📥 Importar<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" /></label>
+      <label class="btn btn-ghost" style="cursor:pointer;">📱 Telefones<input type="file" id="fileTel" accept=".xlsx,.xls" style="display:none" /></label>
+      <button class="btn btn-ghost" onclick="openRelatorios()">📊 Relatórios</button>
+      <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar</button>
+    </div>
+    <div class="filters-bar">
+      <span class="filter-label">Status:</span>
+      <span class="chip active" data-f="todos" onclick="setFilter('todos',this)">Todos <span id="chipTodos" style="font-size:10px;opacity:0.6"></span></span>
+      <span class="chip e" data-f="ativos" onclick="setFilter('ativos',this)">✅ Ativos <span id="chipAtivos" style="font-size:10px;opacity:0.6"></span></span>
+      <span class="chip v" data-f="vencido" onclick="setFilter('vencido',this)">🔴 Vencidos <span id="chipVencidos" style="font-size:10px;opacity:0.6"></span></span>
+      <span class="chip u" data-f="urgente" onclick="setFilter('urgente',this)">🟠 Urgentes <span id="chipUrgentes" style="font-size:10px;opacity:0.6"></span></span>
+      <span class="chip a" data-f="atencao" onclick="setFilter('atencao',this)">🟡 Atenção <span id="chipAtencao" style="font-size:10px;opacity:0.6"></span></span>
+      <span class="chip e" data-f="emdia" onclick="setFilter('emdia',this)">🟢 Em Dia <span id="chipEmDia" style="font-size:10px;opacity:0.6"></span></span>
+      <span class="chip i" data-f="inativo" onclick="setFilter('inativo',this)">⛔ Inativos <span id="chipInativos" style="font-size:10px;opacity:0.6"></span></span>
+    </div>
+    <div class="filters-bar">
+      <span class="filter-label">Contato:</span>
+      <span class="chip active" data-fc="todos" onclick="setFilterC('todos',this)">Todos</span>
+      <span class="chip" data-fc="nao-contatado" onclick="setFilterC('nao-contatado',this)">⚪ Não Contatado</span>
+      <span class="chip" data-fc="contatado" onclick="setFilterC('contatado',this)">🔵 Contatado</span>
+      <span class="chip" data-fc="respondeu" onclick="setFilterC('respondeu',this)">✅ Respondeu</span>
+      <span class="chip" data-fc="agendado" onclick="setFilterC('agendado',this)">📅 Agendado</span>
+      <span class="chip" data-fc="renovando" onclick="setFilterC('renovando',this)">🔄 Renovando</span>
+      <span class="chip" data-fc="concluido" onclick="setFilterC('concluido',this)">✔️ Concluído</span>
+      <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Buscar por nome ou CNPJ..." oninput="doSearch(this.value)"/></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Sit.</th><th>Razão Social</th><th>CNPJ</th><th>Indicador</th><th>Tipo</th>
+          <th>Vencimento</th><th>Dias</th><th>Cert.</th>
+          <th>Contato</th><th>Agendamento</th><th>Pagamento</th><th>Ações</th>
+        </tr></thead>
+        <tbody id="tableBody"><tr><td colspan="12" class="empty"><div class="empty-icon">📂</div>Importe um arquivo ou adicione certificados manualmente</td></tr></tbody>
+      </table>
+    </div>
+    <div id="tableInfo" style="padding:10px 0;font-size:12px;color:var(--text3);"></div>
+  </div>
+</div>
+
+<!-- RECEITA -->
+<div class="page" id="page-receita">
+  <div style="padding:24px;">
+    <div class="page-header">
+      <div class="page-title">Receita & Comissões</div>
+      <div class="page-sub">Controle financeiro da carteira de certificados</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="exportReceitaExcel()">📥 Exportar Financeiro</button>
+    </div>
+    </div>
+    <div class="stats-row" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      <div class="stat-card receita"><div class="stat-label">Total Recebido</div><div class="stat-value" id="rTotalRecebido">R$ 0</div></div>
+      <div class="stat-card urgente"><div class="stat-label">A Receber</div><div class="stat-value" id="rAReceber">R$ 0</div></div>
+      <div class="stat-card emdia"><div class="stat-label">Certificados Pagos</div><div class="stat-value" id="rPagos">0</div></div>
+      <div class="stat-card atencao"><div class="stat-label">Pendentes</div><div class="stat-value" id="rPendentes">0</div></div>
+      <div class="stat-card total"><div class="stat-label">Ticket Médio</div><div class="stat-value" id="rTicket">R$ 0</div></div>
+      <div class="stat-card atencao"><div class="stat-label">Potencial 30d</div><div class="stat-value" id="rPotencial">R$ 0</div><div class="stat-sub">cert. vencendo em 30d</div></div>
+    </div>
+    <div class="receita-form">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;">⚙️ Configurar Preços por Tipo de Certificado</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;" id="precosGrid"></div>
+      <div style="margin-top:14px;display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="salvarPrecos()">💾 Salvar Preços</button>
+        <button class="btn btn-ghost" onclick="calcularReceita()">🔄 Recalcular</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11.5px;color:var(--text2)">🎁 Bônus mensais usados:</span>
+        <input type="number" id="bonusUsados" min="0" max="5" value="0" style="width:60px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;text-align:center" oninput="calcularReceita()"/>
+        <span style="font-size:11px;color:var(--text3)">/ 5</span>
+      </div>
+      </div>
+    </div>
+    <div class="receita-table">
+      <table>
+        <thead><tr><th>Razão Social</th><th>Tipo Cert.</th><th>PF/PJ</th><th>Status Pgto</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Responsável</th></tr></thead>
+        <tbody id="receitaBody"><tr><td colspan="6" class="empty"><div class="empty-icon">💰</div>Sem dados financeiros</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ZAPI -->
+<div class="page" id="page-zapi">
+  <div style="padding:24px;">
+    <div class="page-header">
+      <div class="page-title">Configuração WhatsApp (Z-API)</div>
+      <div class="page-sub">Configure o envio automático de mensagens</div>
+    </div>
+    <div class="receita-form">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;">🔑 Credenciais Z-API</div>
+      <div class="zapi-grid">
+        <div class="form-group"><label>Instance ID</label><input type="text" id="zapiId" placeholder="3DF12345..."/></div>
+        <div class="form-group"><label>Token da Instância</label><input type="text" id="zapiToken" placeholder="ABC123DEF..."/></div>
+        <div class="form-group"><label>Client-Token (Segurança)</label><input type="text" id="zapiCt" placeholder="F..."/></div>
+        <div style="display:flex;align-items:flex-end;gap:8px;">
+          <button class="btn btn-primary" onclick="salvarZapi()">💾 Salvar</button>
+          <button class="btn btn-ghost" onclick="testarZapi()">🔗 Testar Conexão</button>
+        <button class="btn btn-wa btn-sm" onclick="enviarMsgTeste()">📱 Enviar Msg Teste</button>
+        </div>
+      </div>
+      <div class="zapi-status-msg" id="zapiStatus"></div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text3);">Acesse <a href="https://z-api.io" target="_blank" style="color:var(--accent)">z-api.io</a>, crie sua conta, crie uma instância e copie as credenciais acima. Depois conecte seu WhatsApp escaneando o QR Code no painel do Z-API.</div>
+    </div>
+  </div>
+</div>
+
+<!-- HORÁRIOS -->
+<div class="page" id="page-horarios">
+  <div style="padding:24px;">
+    <div class="page-header">
+      <div class="page-title">Gestão de Horários</div>
+      <div class="page-sub">Configure os horários disponíveis para agendamento</div>
+    </div>
+    <div class="receita-form">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;">➕ Adicionar Horário</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group"><label>Data</label><input type="date" id="hData"/></div>
+        <div class="form-group"><label>Hora</label><input type="time" id="hHora"/></div>
+        <button class="btn btn-primary" onclick="addHorario()">Adicionar</button>
+        <button class="btn btn-danger" onclick="clearHorarios()">Limpar Tudo</button>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+      <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:14px;">HORÁRIOS CADASTRADOS</div>
+      <div class="horario-grid" id="horariosGrid"><div style="color:var(--text3);font-size:13px;">Nenhum horário cadastrado</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- NOTIF CONTAINER -->
+<div class="notif-badge" id="notifContainer"></div>
+
+<!-- MODAL ADD/EDIT -->
+<div class="modal-overlay" id="formModal">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title" id="formModalTitle">Adicionar Certificado</div>
+    <button class="modal-close" onclick="closeModal('formModal')">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-row">
+      <div class="form-group"><label>Razão Social *</label><input type="text" id="fRazao"/></div>
+      <div class="form-group"><label>CNPJ *</label><div class="cnpj-row"><input type="text" id="fCnpj" placeholder="00.000.000/0000-00" oninput="onCnpjInput(this)"/><button class="btn btn-ghost btn-sm" onclick="buscarCnpj()">🔍</button></div><div class="cnpj-hint" id="cnpjHint"></div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Nome Fantasia</label><input type="text" id="fFantasia"/></div>
+      <div class="form-group"><label>Nome do Contato</label><input type="text" id="fContato"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>WhatsApp</label><input type="text" id="fWa" placeholder="5511999999999"/></div>
+      <div class="form-group"><label>E-mail</label><input type="text" id="fEmail"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Data de Vencimento *</label><input type="date" id="fVenc"/></div>
+      <div class="form-group"><label>Sócio Responsável</label><input type="text" id="fSocio"/></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Tipo de Certificado (PF/PJ)</div>
+      <div class="option-grid">
+        <button class="option-btn" data-tp="pf" onclick="toggleTipo('pf',this)">👤 Pessoa Física</button>
+        <button class="option-btn sel" data-tp="pj" onclick="toggleTipo('pj',this)">🏢 Pessoa Jurídica</button>
+      </div>
+      <input type="hidden" id="fTipo" value="pj"/>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Status de Contato</div>
+      <div class="option-grid" id="statusContatoOpts">
+        <button class="option-btn sel" data-sc="nao-contatado" onclick="selSC('nao-contatado',this)">⚪ Não Contatado</button>
+        <button class="option-btn" data-sc="contatado" onclick="selSC('contatado',this)">🔵 Contatado</button>
+        <button class="option-btn" data-sc="respondeu" onclick="selSC('respondeu',this)">✅ Respondeu</button>
+        <button class="option-btn" data-sc="agendado" onclick="selSC('agendado',this)">📅 Agendado</button>
+        <button class="option-btn" data-sc="renovando" onclick="selSC('renovando',this)">🔄 Renovando</button>
+        <button class="option-btn" data-sc="concluido" onclick="selSC('concluido',this)">✔️ Concluído</button>
+        <button class="option-btn" data-sc="inativo" onclick="selSC('inativo',this)">⛔ Inativo</button>
+      </div>
+      <input type="hidden" id="fSC" value="nao-contatado"/>
+    </div>
+    <div class="form-row" id="agendRow" style="display:none">
+      <div class="form-group"><label>Data do Agendamento</label><input type="date" id="fAgedData"/></div>
+      <div class="form-group"><label>Hora do Agendamento</label><input type="time" id="fAgedHora"/></div>
+    </div>
+    <div id="horariosLivresWrap" style="display:none">
+      <div class="form-section">
+        <div class="form-section-title">⏰ Horários Disponíveis</div>
+        <div class="option-grid" id="horariosLivresGrid"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">💳 Situação de Pagamento</div>
+      <div class="option-grid">
+        <button class="option-btn sel" data-pg="nao-informado" onclick="selPG('nao-informado',this)">❓ Não Informado</button>
+        <button class="option-btn" data-pg="pendente" onclick="selPG('pendente',this)">⏳ Pendente</button>
+        <button class="option-btn" data-pg="parcial" onclick="selPG('parcial',this)">📊 Parcial</button>
+        <button class="option-btn" data-pg="pago" onclick="selPG('pago',this)">✅ Pago</button>
+      </div>
+      <input type="hidden" id="fPG" value="nao-informado"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Data Último Contato</label><input type="date" id="fDUC"/></div>
+      <div class="form-group"><label>Responsável</label><input type="text" id="fResp"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>🏷️ Indicador / Origem</label><input type="text" id="fIndicador" placeholder="Almeida, Próprio..." oninput="calcFinanceiroForm()"/></div>
+      <div class="form-group"><label>💰 Valor de Venda (R$)</label><input type="number" id="fValorVenda" placeholder="0,00" min="0" step="0.01" style="font-family:'JetBrains Mono',monospace" oninput="calcFinanceiroForm()"/></div>
+    </div>
+    <div class="fsect" id="financeiroPreview" style="display:none">
+      <div class="fsect-title">💰 Resultado Financeiro</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px;" id="financeiroGrid"></div>
+    </div>
+    <div class="fsect">
+      <div class="fsect-title">👤 e-CPF do Sócio (opcional)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="form-group"><label>Nome do Sócio</label><input type="text" id="fNomeSocio" placeholder="Nome completo"/></div>
+        <div class="form-group"><label>CPF do Sócio</label><input type="text" id="fCpfSocio" placeholder="000.000.000-00"/></div>
+        <div class="form-group"><label>Vencimento e-CPF</label><input type="date" id="fVencCpf"/></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>💰 Valor Cobrado (R$)</label><input type="number" id="fValor" placeholder="0,00" min="0" step="0.01" style="font-family:'JetBrains Mono',sans-serif"/></div>
+      <div class="form-group"><label>Tipo de Certificado</label>
+        <select id="fTipoCert" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);width:100%;font-family:'Plus Jakarta Sans',sans-serif;">
+          <option value="">Selecione...</option>
+          <option value="e-CNPJ A1">e-CNPJ A1</option>
+          <option value="e-CNPJ A3">e-CNPJ A3</option>
+          <option value="e-CPF A1">e-CPF A1</option>
+          <option value="e-CPF A3">e-CPF A3</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row one">
+      <div class="form-group"><label>Observações</label><textarea id="fObs"></textarea></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeModal('formModal')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveForm()">💾 Salvar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL MENSAGEM -->
+<div class="modal-overlay" id="msgModal">
+<div class="modal" style="max-width:700px">
+  <div class="modal-header"><div class="modal-title">📱 Enviar Mensagem</div><button class="modal-close" onclick="closeModal('msgModal')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-group" style="margin-bottom:14px"><label>Template de Mensagem</label>
+      <select id="msgTemplate" onchange="updateMsgPreview()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);width:100%;font-family:'Plus Jakarta Sans',sans-serif;">
+        <option value="primeiro-contato">1º Contato</option>
+        <option value="lembrete">Lembrete</option>
+        <option value="urgente">Urgente</option>
+        <option value="documentos">📋 Documentos Necessários</option>
+        <option value="agradecimento">Agradecimento</option>
+      </select>
+    </div>
+    <div class="msg-preview" id="msgPreview"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeModal('msgModal')">Fechar</button>
+    <button class="btn btn-whatsapp" onclick="enviarWa()">📱 Enviar via WhatsApp</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL HISTÓRICO -->
+<div class="modal-overlay" id="histModal">
+<div class="modal" style="max-width:600px">
+  <div class="modal-header"><div class="modal-title">📜 Histórico — <span id="histNome"></span></div><button class="modal-close" onclick="closeModal('histModal')">✕</button></div>
+  <div class="modal-body">
+    <div class="hist-add">
+      <input type="text" id="histNovaObs" placeholder="Adicionar observação rápida..."/>
+      <button class="btn btn-primary btn-sm" onclick="addHistEntry()">+ Adicionar</button>
+    </div>
+    <div class="hist-list" id="histList"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('histModal')">Fechar</button></div>
+</div>
+</div>
+
+<!-- MODAL DISPARO -->
+<div class="modal-overlay" id="disparoModal">
+<div class="modal" style="max-width:680px">
+  <div class="modal-header"><div class="modal-title" id="disparoTitle">🚀 Disparo WhatsApp</div><button class="modal-close" onclick="closeModal('disparoModal')">✕</button></div>
+  <div class="modal-body">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+      <span style="font-size:10.5px;color:var(--text2);font-weight:700;margin-right:2px;">Filtrar:</span>
+      <span id="df-vencido" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);font-size:11px;cursor:pointer;font-weight:600;" onclick="filtrarDisparo('vencido')">🔴 Vencidos</span>
+      <span id="df-urgente" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);font-size:11px;cursor:pointer;font-weight:600;" onclick="filtrarDisparo('urgente')">🟠 Urgentes</span>
+      <span id="df-atencao" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);font-size:11px;cursor:pointer;font-weight:600;" onclick="filtrarDisparo('atencao')">🟡 Atenção</span>
+      <span id="df-todos" style="padding:4px 10px;border-radius:20px;border:1px solid rgba(79,142,255,0.3);background:rgba(79,142,255,0.12);color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;" onclick="filtrarDisparo('todos')">📋 Todos pendentes</span>
+    </div>
+    <div id="disparoAviso" style="font-size:11px;color:var(--text3);margin-bottom:10px;"></div>
+
+    <!-- Seletor de Template com Preview -->
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:12px;">
+      <div style="font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">📝 Template de Mensagem</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="tmplChips">
+        <span class="mes-chip active" data-tmpl="primeiro-contato" onclick="selecionarTemplate('primeiro-contato',this)">🤝 1º Contato</span>
+        <span class="mes-chip" data-tmpl="lembrete" onclick="selecionarTemplate('lembrete',this)">👋 Lembrete</span>
+        <span class="mes-chip" data-tmpl="urgente" onclick="selecionarTemplate('urgente',this)">⚠️ Urgente</span>
+        <span class="mes-chip" data-tmpl="documentos" onclick="selecionarTemplate('documentos',this)">📄 Documentos</span>
+        <span class="mes-chip" data-tmpl="agradecimento" onclick="selecionarTemplate('agradecimento',this)">🙏 Agradecimento</span>
+      </div>
+      <input type="hidden" id="disparoTemplate" value="primeiro-contato"/>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:6px;display:flex;justify-content:space-between;">
+        <span>👁️ Preview da mensagem:</span>
+        <span id="disparoTmplTipo" style="color:var(--accent);font-weight:700;"></span>
+      </div>
+      <div id="disparoMsgPreview" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;font-size:12px;color:var(--text2);white-space:pre-wrap;max-height:150px;overflow-y:auto;line-height:1.6;"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:6px;" id="disparoCharCount"></div>
+    </div>
+    <div id="logDisparoWrap" style="display:none;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);">📋 Log de Envios</div>
+        <button class="btn btn-ghost btn-sm" onclick="exportarLogDisparo()">📥 Exportar</button>
+      </div>
+      <div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg2);">
+        <div id="logDisparoList"></div>
+      </div>
+    </div>
+    <div class="progress-bar" id="dispProgBar" style="display:none"><div class="progress-fill" id="dispProgFill"></div></div>
+    <div class="progress-text" id="dispProgText"></div>
+    <div class="disparo-list" id="disparoLista"></div>
+  </div>
+  <div class="modal-footer" id="disparoFooter">
+    <button class="btn btn-ghost" onclick="closeModal('disparoModal')">Fechar</button>
+    <button class="btn btn-whatsapp" id="btnDisparo" onclick="iniciarDisparo()">🚀 Enviar Selecionados</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL MIGRAÇÃO V23 -->
+<div class="modal-overlay" id="migModal">
+<div class="modal" style="max-width:560px">
+  <div class="modal-header"><div class="modal-title">🔄 Migrar Dados do V23</div><button class="modal-close" onclick="closeModal('migModal')">✕</button></div>
+  <div class="modal-body">
+    <div style="background:rgba(108,142,245,0.08);border:1px solid rgba(108,142,245,0.25);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:var(--text2);">
+      <strong style="color:var(--accent)">ℹ️ Como funciona:</strong><br/>
+      1. No V23, clique em <strong>💾 Exportar para Excel</strong><br/>
+      2. Salve o arquivo <code style="background:var(--bg3);padding:2px 6px;border-radius:4px">.xlsx</code> no computador<br/>
+      3. Aqui embaixo, clique em <strong>Selecionar arquivo do V23</strong><br/>
+      4. O sistema importa tudo automaticamente ✅
+    </div>
+    <div style="border:2px dashed var(--border2);border-radius:10px;padding:30px;text-align:center;cursor:pointer;" onclick="document.getElementById('fileMig').click()">
+      <div style="font-size:36px;margin-bottom:10px">📂</div>
+      <div style="font-weight:600;margin-bottom:4px">Clique para selecionar o arquivo exportado do V23</div>
+      <div style="font-size:12px;color:var(--text3)">Aceita .xlsx ou .xls</div>
+      <input type="file" id="fileMig" accept=".xlsx,.xls" style="display:none"/>
+    </div>
+    <div id="migStatus" style="margin-top:12px;font-size:13px;display:none;"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('migModal')">Fechar</button></div>
+</div>
+</div>
+
+<!-- MODAL ONBOARDING -->
+<div class="modal-overlay" id="onboardModal">
+<div class="modal" style="max-width:700px">
+  <div class="modal-header"><div class="modal-title">🎯 Onboarding de Novo Cliente</div><button class="modal-close" onclick="closeModal('onboardModal')">✕</button></div>
+  <div class="modal-body">
+    <div style="display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;">
+      <div id="ob-step-1" class="ob-step active" onclick="goObStep(1)">1. Identificação</div>
+      <div id="ob-step-2" class="ob-step" onclick="goObStep(2)">2. Certificado</div>
+      <div id="ob-step-3" class="ob-step" onclick="goObStep(3)">3. Financeiro</div>
+      <div id="ob-step-4" class="ob-step" onclick="goObStep(4)">4. Confirmar</div>
+    </div>
+    <!-- Step 1 -->
+    <div id="ob-page-1" class="ob-page">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--accent)">👤 Dados da Empresa / Pessoa</div>
+      <div class="form-row"><div class="form-group"><label>CNPJ ou CPF *</label><div class="cnpj-row"><input type="text" id="ob-cnpj" placeholder="00.000.000/0000-00" oninput="onObCnpj(this)"/><button class="btn btn-ghost btn-sm" onclick="buscarObCnpj()">🔍 Buscar</button></div><div class="cnpj-hint" id="ob-cnpj-hint"></div></div><div class="form-group"><label>Razão Social *</label><input type="text" id="ob-razao"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Nome Fantasia</label><input type="text" id="ob-fantasia"/></div><div class="form-group"><label>Sócio Responsável</label><input type="text" id="ob-socio"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Nome do Contato</label><input type="text" id="ob-contato"/></div><div class="form-group"><label>WhatsApp *</label><input type="text" id="ob-wa" placeholder="5511999999999"/></div></div>
+      <div class="form-row"><div class="form-group"><label>E-mail</label><input type="text" id="ob-email"/></div><div class="form-group"><label>Endereço / CEP</label><input type="text" id="ob-endereco"/></div></div>
+    </div>
+    <!-- Step 2 -->
+    <div id="ob-page-2" class="ob-page" style="display:none">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--accent)">📋 Dados do Certificado</div>
+      <div class="form-row"><div class="form-group"><label>Tipo de Certificado</label><select id="ob-tipo-cert" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);width:100%"><option value="">Selecione...</option><option value="e-CNPJ A1">e-CNPJ A1</option><option value="e-CNPJ A3">e-CNPJ A3</option><option value="e-CPF A1">e-CPF A1</option><option value="e-CPF A3">e-CPF A3</option></select></div><div class="form-group"><label>PF / PJ</label><div style="display:flex;gap:8px;margin-top:2px"><button class="option-btn sel" data-obtp="pj" onclick="selObTipo('pj',this)">🏢 PJ</button><button class="option-btn" data-obtp="pf" onclick="selObTipo('pf',this)">👤 PF</button><button class="option-btn" data-obtp="pf,pj" onclick="selObTipo('pf,pj',this)">🏢+👤 Ambos</button></div><input type="hidden" id="ob-tipo" value="pj"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Data de Vencimento *</label><input type="date" id="ob-venc"/></div><div class="form-group"><label>Possui certificado atual?</label><select id="ob-possui" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);width:100%"><option value="sim">Sim — Renovação</option><option value="nao">Não — 1ª Emissão</option></select></div></div>
+      <div class="form-row one"><div class="form-group"><label>Documentos Recebidos</label><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="ob-docs-check">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="doc-cnh"/> CNH do sócio</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="doc-cep"/> Endereço/CEP</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="doc-email"/> E-mail</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="doc-tel"/> Telefone</label>
+      </div></div></div>
+    </div>
+    <!-- Step 3 -->
+    <div id="ob-page-3" class="ob-page" style="display:none">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--accent)">💰 Informações Financeiras</div>
+      <div class="form-row"><div class="form-group"><label>Valor Cobrado (R$)</label><input type="number" id="ob-valor" placeholder="0,00" min="0" step="0.01"/></div><div class="form-group"><label>Situação de Pagamento</label><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <button class="option-btn sel" data-obpg="nao-informado" onclick="selObPg('nao-informado',this)">❓ Não Inf.</button>
+        <button class="option-btn" data-obpg="pendente" onclick="selObPg('pendente',this)">⏳ Pendente</button>
+        <button class="option-btn" data-obpg="parcial" onclick="selObPg('parcial',this)">📊 Parcial</button>
+        <button class="option-btn" data-obpg="pago" onclick="selObPg('pago',this)">✅ Pago</button>
+      </div><input type="hidden" id="ob-pg" value="nao-informado"/></div></div>
+      <div class="form-row one"><div class="form-group"><label>Observações internas</label><textarea id="ob-obs" placeholder="Anotações sobre este cliente..."></textarea></div></div>
+    </div>
+    <!-- Step 4 -->
+    <div id="ob-page-4" class="ob-page" style="display:none">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--accent)">✅ Confirmar Cadastro</div>
+      <div id="ob-resumo" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;font-size:13px;line-height:2;"></div>
+      <div style="margin-top:14px;background:rgba(46,204,138,0.08);border:1px solid rgba(46,204,138,0.2);border-radius:8px;padding:12px;font-size:13px;color:var(--green)">
+        ✅ Ao confirmar, o cliente será cadastrado e uma mensagem de 1º contato estará pronta para envio!
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost" id="ob-btn-back" onclick="obBack()" style="display:none">← Voltar</button>
+      <button class="btn btn-primary" id="ob-btn-next" onclick="obNext()">Próximo →</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL HISTÓRICO DISPAROS -->
+<div class="modal-overlay" id="logDisparosModal">
+<div class="modal wide">
+  <div class="modal-header">
+    <div class="modal-title">📋 Histórico de Disparos</div>
+    <button class="modal-close" onclick="closeModal('logDisparosModal')">✕</button>
+  </div>
+  <div class="modal-body" id="logDisparosBody">
+    <div style="color:var(--text3);font-size:12px;text-align:center;padding:30px;">Nenhum disparo realizado ainda.</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeModal('logDisparosModal')">Fechar</button>
+    <button class="btn btn-danger btn-sm" onclick="limparHistoricoDisparos()">🗑️ Limpar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL BACKUP -->
+<div class="modal-overlay" id="backupModal">
+<div class="modal" style="max-width:520px">
+  <div class="modal-header"><div class="modal-title">💾 Backup & Restauração</div><button class="modal-close" onclick="closeModal('backupModal')">✕</button></div>
+  <div class="modal-body">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:6px;">📤 Fazer Backup Agora</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Salva todos os dados em um arquivo JSON que pode ser restaurado a qualquer momento.</div>
+        <button class="btn btn-primary" onclick="fazerBackup()">💾 Baixar Backup (.json)</button>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:6px;">📥 Restaurar Backup</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Restaura os dados de um arquivo de backup previamente salvo.</div>
+        <label class="btn btn-ghost" style="cursor:pointer;">📂 Selecionar arquivo de backup<input type="file" id="fileRestore" accept=".json" style="display:none"/></label>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:6px;">🕐 Último Backup Automático</div>
+        <div style="font-size:12px;color:var(--text2);" id="lastBackupInfo">Nenhum backup automático registrado</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;">O backup automático ocorre sempre que você exporta para Excel.</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('backupModal')">Fechar</button></div>
+</div>
+</div>
+<div class="modal-overlay" id="relModal">
+<div class="modal" style="max-width:500px">
+  <div class="modal-header"><div class="modal-title">📊 Relatórios</div><button class="modal-close" onclick="closeModal('relModal')">✕</button></div>
+  <div class="modal-body">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn" style="background:rgba(240,94,106,0.12);color:var(--red);border:1px solid rgba(240,94,106,0.3);justify-content:flex-start;padding:14px;" onclick="gerarRel('vencidos')">🔴 Certificados Vencidos<span style="font-size:11px;opacity:0.7;margin-left:auto">Data passada</span></button>
+      <button class="btn" style="background:rgba(245,148,60,0.12);color:var(--orange);border:1px solid rgba(245,148,60,0.3);justify-content:flex-start;padding:14px;" onclick="gerarRel('urgentes')">🟠 Urgentes<span style="font-size:11px;opacity:0.7;margin-left:auto">≤ 15 dias</span></button>
+      <button class="btn" style="background:rgba(245,200,66,0.12);color:var(--yellow);border:1px solid rgba(245,200,66,0.3);justify-content:flex-start;padding:14px;" onclick="gerarRel('atencao')">🟡 Atenção<span style="font-size:11px;opacity:0.7;margin-left:auto">16–45 dias</span></button>
+      <button class="btn" style="background:rgba(74,85,104,0.15);color:var(--text2);border:1px solid var(--border);justify-content:flex-start;padding:14px;" onclick="gerarRel('sem-tel')">📵 Sem Telefone</button>
+      <button class="btn" style="background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.3);justify-content:flex-start;padding:14px;" onclick="gerarRel('nao-contatados')">⚪ Não Contatados</button>
+      <button class="btn" style="background:rgba(34,211,238,0.12);color:var(--teal);border:1px solid rgba(34,211,238,0.3);justify-content:flex-start;padding:14px;" onclick="gerarRel('todos')">📋 Relatório Completo</button>
+      <button class="btn" style="background:rgba(46,204,138,0.12);color:var(--green);border:1px solid rgba(46,204,138,0.3);justify-content:flex-start;padding:14px;" onclick="gerarRel('financeiro')">💰 Relatório Financeiro</button>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('relModal')">Fechar</button></div>
+</div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let allData = [];
+let horariosDisp = {};
+let precos = { 'e-CNPJ A1':150, 'e-CNPJ A3':250, 'e-CPF A1':120, 'e-CPF A3':200, 'outros':150 };
+let currentFilter = 'todos';
+let currentFilterC = 'todos';
+let currentSearch = '';
+let editIdx = -1;
+let msgIdx = -1;
+let histIdx = -1;
+let disparoInProgress = false;
+let clientesPendentes = [];
+let charts = {};
+let cnpjTimer = null;
+let lastCnpj = '';
+
+// ============================================================
+// MAPS
+// ============================================================
+const scMap = {
+  'nao-contatado':{ label:'Não Contatado', cls:'badge-nc' },
+  'contatado':{ label:'Contatado', cls:'badge-contatado' },
+  'respondeu':{ label:'Respondeu', cls:'badge-respondeu' },
+  'agendado':{ label:'Agendado', cls:'badge-agendado' },
+  'renovando':{ label:'Renovando', cls:'badge-renovando' },
+  'concluido':{ label:'Concluído', cls:'badge-concluido' },
+  'inativo':{ label:'Inativo', cls:'badge-inativo' }
+};
+const pgMap = {
+  'nao-informado':{ label:'Não Informado', cls:'badge-ni' },
+  'pendente':{ label:'Pendente', cls:'badge-pendente' },
+  'parcial':{ label:'Parcial', cls:'badge-parcial' },
+  'pago':{ label:'Pago', cls:'badge-pago' }
+};
+
+// ============================================================
+// NAV
+// ============================================================
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p==='dashboard') renderDashboard();
+  if(p==='receita') renderReceita();
+}
+
+// ============================================================
+// NOTIFY
+// ============================================================
+function notify(msg, type='success') {
+  const c = document.getElementById('notifContainer');
+  const el = document.createElement('div');
+  el.className = 'notif '+type;
+  el.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(()=>{ el.style.animation='fadeOut 0.3s forwards'; setTimeout(()=>el.remove(),300); },3500);
+}
+function markChanged() {
+  const b = document.getElementById('syncBadge');
+  b.className = 'sync-badge warn';
+  document.getElementById('syncText').textContent = 'Alterações não salvas';
+}
+function markSaved() {
+  const b = document.getElementById('syncBadge');
+  b.className = 'sync-badge ok';
+  document.getElementById('syncText').textContent = 'Sincronizado';
+}
+
+// ============================================================
+// STATUS HELPERS
+// ============================================================
+function getDias(dv) {
+  if(!dv) return null;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const v = new Date(dv+'T00:00:00');
+  return Math.floor((v-hoje)/(86400000));
+}
+function getStatus(dv) {
+  const d = getDias(dv);
+  if(d===null) return { key:'semdata', label:'Sem Data', cls:'badge-ni' };
+  if(d<0) return { key:'vencido', label:'Vencido', cls:'badge-vencido' };
+  if(d<=15) return { key:'urgente', label:'Urgente', cls:'badge-urgente' };
+  if(d<=45) return { key:'atencao', label:'Atenção', cls:'badge-atencao' };
+  return { key:'emdia', label:'Em Dia', cls:'badge-emdia' };
+}
+function fmtDate(s) {
+  if(!s) return '-';
+  try { return new Date(s+'T00:00:00').toLocaleDateString('pt-BR'); } catch{ return s; }
+}
+function fmtMoney(v) {
+  return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+}
+
+// ============================================================
+// RENDER TABLE
+// ============================================================
+function chkInativo(r){
+  const sc=(r.statusContato||'').toLowerCase();
+  const sit=(r.situacao||'').toLowerCase();
+  return sc==='inativo'||sit==='inativo'||sit==='inativo/baixado';
+}
+function renderTable() {
+  let data = allData;
+  if(currentFilter==='inativo') {
+    // Só inativos
+    data = data.filter(r => chkInativo(r));
+  } else if(currentFilter==='todos') {
+    // Todos — ativos E inativos
+    if(currentFilterC!=='todos') data = data.filter(r=>(r.statusContato||'nao-contatado')===currentFilterC);
+  } else if(currentFilter==='ativos') {
+    // Só ativos
+    data = data.filter(r => !chkInativo(r));
+    if(currentFilterC!=='todos') data = data.filter(r=>(r.statusContato||'nao-contatado')===currentFilterC);
+  } else {
+    // Filtros de status de vencimento (vencido/urgente/atencao/emdia) — só ativos
+    data = data.filter(r => !chkInativo(r));
+    data = data.filter(r => getStatus(r.dataVencimento).key === currentFilter);
+    if(currentFilterC!=='todos') data = data.filter(r=>(r.statusContato||'nao-contatado')===currentFilterC);
+  }
+  if(currentSearch) {
+    const s = currentSearch.toLowerCase();
+    data = data.filter(r=>(r.razaoSocial||'').toLowerCase().includes(s)||(r.cnpj||'').includes(s));
+  }
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('tableInfo').textContent = `Exibindo ${data.length} de ${allData.length} registros`;
+  // Atualiza contadores nos chips
+  const _ativ = allData.filter(r=>!chkInativo(r));
+  const _inat = allData.filter(r=>chkInativo(r));
+  const _venc2 = _ativ.filter(r=>getDias(r.dataVencimento)<0);
+  const _urg2 = _ativ.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>=0&&d<=15;});
+  const _aten2 = _ativ.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>15&&d<=45;});
+  const _emd2 = _ativ.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>45;});
+  [['chipTodos',allData.length],['chipAtivos',_ativ.length],['chipVencidos',_venc2.length],['chipUrgentes',_urg2.length],['chipAtencao',_aten2.length],['chipEmDia',_emd2.length],['chipInativos',_inat.length]].forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent='('+v+')';});
+  if(!data.length) { tbody.innerHTML='<tr><td colspan="12" class="empty"><div class="empty-icon">🔍</div>Nenhum resultado encontrado</td></tr>'; return; }
+  tbody.innerHTML = data.map(row=>{
+    const oi = allData.indexOf(row);
+    const st = getStatus(row.dataVencimento);
+    const dias = getDias(row.dataVencimento);
+    const sc = scMap[row.statusContato||'nao-contatado']||scMap['nao-contatado'];
+    const pg = pgMap[row.situacaoPagamento||'nao-informado']||pgMap['nao-informado'];
+    const tipos = (row.tipoCertificadoPF_PJ||row.tipoPFPJ||row['Tipo PF/PJ']||'pj').split(',');
+    const tipoLabel = tipos.map(t=>t==='pf'?'<span class="badge badge-pf">PF</span>':'<span class="badge badge-pj">PJ</span>').join(' ');
+    const _inativo=chkInativo(row);
+    const sitBadge = _inativo ? '<span class="badge badge-sit-inativo">⛔ Inativo</span>' : '<span class="badge badge-ativo">✅ Ativo</span>';
+    return `<tr ${_inativo?'class="inativo-row"':''}>
+      <td>${sitBadge}</td>
+      <td><strong style="font-size:13px;cursor:pointer;color:var(--accent)" onclick="openEdit(${oi})" title="Clique para editar">${row.razaoSocial||'-'}</strong>${row.nomeFantasia?`<div style="font-size:11px;color:var(--text3)">${row.nomeFantasia}</div>`:''}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${row.cnpj||'-'}</td>
+      <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;background:${row.indicador&&row.indicador!=='Próprio'?'rgba(176,125,255,0.12)':'rgba(61,80,112,0.15)'};color:${row.indicador&&row.indicador!=='Próprio'?'var(--purple)':'var(--text3)'}">${row.indicador||'Próprio'}</span></td>
+      <td>${tipoLabel}</td>
+      <td>${fmtDate(row.dataVencimento)}</td>
+      <td><strong style="color:${dias<0?'var(--red)':dias<=15?'var(--orange)':dias<=45?'var(--yellow)':'var(--green)'}">${dias!==null?dias+'d':'-'}</strong></td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td><span class="badge ${sc.cls}">${sc.label}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${row.dataAgendamento?fmtDate(row.dataAgendamento)+(row.horaAgendamento?' '+row.horaAgendamento:''):'-'}</td>
+      <td><span class="badge ${pg.cls}">${pg.label}</span></td>
+      <td><div class="actions">
+        ${_inativo
+          ? `<button class="btn-toggle-ativo" onclick="toggleAtivo(${oi})" title="Reativar cliente">✅ Ativar</button>`
+          : `<button class="btn-toggle-inativo" onclick="toggleAtivo(${oi})" title="Desativar cliente">⛔ Desativar</button>`
+        }
+        <button class="act" onclick="openMsg(${oi})" title="Enviar mensagem">💬</button>
+        <button class="act" onclick="openHist(${oi})" title="Histórico">📜</button>
+        <button class="act" onclick="openEdit(${oi})" title="Editar">✏️</button>
+        ${row.whatsapp?`<a class="act" href="https://wa.me/${row.whatsapp}" target="_blank" title="WhatsApp">📱</a>`:''}
+        <button class="act" onclick="delRow(${oi})" title="Excluir" style="color:var(--red)">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  updateNavBadge();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+let mesSelecionado = '';
+
+function renderMesesSel() {
+  const meses = {};
+  allData.forEach(r => {
+    const vv = parseFloat(r.valorVenda || 0);
+    if(vv <= 0 || !r.dataVencimento) return;
+    try {
+      const dv = new Date(r.dataVencimento+'T00:00:00');
+      const em = new Date(dv); em.setFullYear(em.getFullYear()-1);
+      const key = em.getFullYear()+'-'+String(em.getMonth()+1).padStart(2,'0');
+      const label = em.toLocaleDateString('pt-BR',{month:'short',year:'numeric'});
+      meses[key] = label;
+    } catch(e){}
+  });
+  const sorted = Object.keys(meses).sort().reverse();
+  if(!mesSelecionado && sorted.length>0) mesSelecionado = sorted[0];
+  const sel = document.getElementById('mesSel');
+  if(!sel) return;
+  sel.innerHTML = [
+    `<span class="mes-chip ${mesSelecionado===''?'active':''}" onclick="setMesFin('',this)">Todos</span>`,
+    ...sorted.map(k=>`<span class="mes-chip ${mesSelecionado===k?'active':''}" onclick="setMesFin('${k}',this)">${meses[k]}</span>`)
+  ].join('');
+}
+
+function setMesFin(mes, el) {
+  mesSelecionado = mes;
+  document.querySelectorAll('.mes-chip').forEach(ch=>ch.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderFinanceiro();
+}
+
+function renderFinanceiro() {
+  renderMesesSel();
+  const CUSTO_PJ=86.90, CUSTO_PF=61.04;
+  // Garantir que dados de maio estão aplicados
+  const MAIO_HARD=[
+    {cnpj:'58674636000107',indicador:'Almeida',valorVenda:185,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-15'},
+    {cnpj:'27524170807',indicador:'Próprio',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-14'},
+    {cnpj:'60398144000170',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-14'},
+    {cnpj:'46523227000112',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-14'},
+    {cnpj:'46523436000166',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-14'},
+    {cnpj:'22685177000101',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-14'},
+    {cnpj:'57138834187',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-14'},
+    {cnpj:'32330516894',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-13'},
+    {cnpj:'33736532000140',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-13'},
+    {cnpj:'36627167000124',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-13'},
+    {cnpj:'28898450877',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-12'},
+    {cnpj:'32275280000137',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-12'},
+    {cnpj:'61144585000108',indicador:'Próprio',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-12'},
+    {cnpj:'29677372831',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-12'},
+    {cnpj:'30478956000164',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-12'},
+    {cnpj:'28684528000146',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-11'},
+    {cnpj:'14522414000195',indicador:'Próprio',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-06'},
+    {cnpj:'34053057000170',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-05'},
+  ];
+  MAIO_HARD.forEach(fin=>{
+    const idx=allData.findIndex(r=>(r.cnpj||'').replace(/[^\d]/g,'')===fin.cnpj);
+    if(idx>=0){
+      allData[idx].indicador=fin.indicador;
+      allData[idx].valorVenda=fin.valorVenda;
+      allData[idx].tipoCertificadoPF_PJ=fin.tipoCertificadoPF_PJ;
+      allData[idx].dataVencimento=fin.dataVencimento;
+    } else {
+      // Adicionar virtualmente se não existir na base
+      allData.push({
+        razaoSocial:fin.cnpj, cnpj:fin.cnpj,
+        indicador:fin.indicador, valorVenda:fin.valorVenda,
+        tipoCertificadoPF_PJ:fin.tipoCertificadoPF_PJ,
+        dataVencimento:fin.dataVencimento,
+        statusContato:'concluido', situacaoPagamento:'pago'
+      });
+    }
+  });
+  const dados = allData.filter(r => {
+    const vv = parseFloat(r.valorVenda||0);
+    if(vv<=0) return false;
+    if(!mesSelecionado) return true;
+    try {
+      const dv = new Date(r.dataVencimento+'T00:00:00');
+      const em = new Date(dv); em.setFullYear(em.getFullYear()-1);
+      const key = em.getFullYear()+'-'+String(em.getMonth()+1).padStart(2,'0');
+      return key===mesSelecionado;
+    } catch(e){return false;}
+  });
+  let tv=0,tc=0,tcom=0,tt=0;
+  const inds={};
+  dados.forEach(r=>{
+    const tipo=(r.tipoCertificadoPF_PJ||'pj').toLowerCase();
+    const custo=tipo.includes('pf')?CUSTO_PF:CUSTO_PJ;
+    const venda=parseFloat(r.valorVenda||0);
+    const lucro=venda-custo;
+    const ind=r.indicador||'Próprio';
+    const temInd=ind&&ind!=='Próprio';
+    const comissao=temInd?Math.round(lucro*0.5*100)/100:0;
+    const lucroTaty=temInd?Math.round(lucro*0.5*100)/100:Math.round(lucro*100)/100;
+    tv+=venda; tc+=custo; tcom+=comissao; tt+=lucroTaty;
+    if(!inds[ind]) inds[ind]={certs:0,venda:0,comissao:0,taty:0};
+    inds[ind].certs++; inds[ind].venda+=venda; inds[ind].comissao+=comissao; inds[ind].taty+=lucroTaty;
+  });
+  const nPJ=dados.filter(r=>!(r.tipoCertificadoPF_PJ||'pj').toLowerCase().includes('pf')).length;
+  const bonusUsados=Math.min(nPJ,5);
+  const economiaBonus=bonusUsados*CUSTO_PJ;
+  const custoReal=Math.max(0,tc-economiaBonus);
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  s('finCerts',dados.length);
+  s('finVenda',fmtMoney(tv));
+  s('finCusto',fmtMoney(custoReal));
+  s('finCustoSub','bruto: '+fmtMoney(tc));
+  s('finBonus',bonusUsados+'/5');
+  s('finBonusSub','economia: '+fmtMoney(economiaBonus));
+  s('finComissao',fmtMoney(tcom));
+  s('finComissaoSub',Object.keys(inds).filter(i=>i!=='Próprio').join(', ')||'—');
+  s('finLucro',fmtMoney(tt));
+  s('finLucroSub',dados.length+' cert. | '+(tv>0?Math.round((tt/tv)*100)+'% margem':'—'));
+  const grid=document.getElementById('finIndGrid');
+  if(grid){
+    if(Object.keys(inds).length>0){
+      grid.innerHTML=Object.entries(inds).map(([ind,d])=>{
+        const cor=ind==='Próprio'?'var(--green)':'var(--purple)';
+        const icon=ind==='Próprio'?'👤':'🤝';
+        return `<div class="fin-ind-card">
+          <div class="fin-ind-title">${icon} ${ind} — ${d.certs} cert.</div>
+          <div class="fin-ind-row"><span>Vendas</span><span style="color:var(--accent)">${fmtMoney(d.venda)}</span></div>
+          ${d.comissao>0?`<div class="fin-ind-row"><span>Comissão</span><span style="color:var(--purple)">${fmtMoney(d.comissao)}</span></div>`:''}
+          <div class="fin-ind-row"><span>Lucro Taty</span><span style="color:${cor}">${fmtMoney(d.taty)}</span></div>
+        </div>`;
+      }).join('');
+    } else {
+      grid.innerHTML='<div style="font-size:11.5px;color:var(--text3);padding:8px 0">Nenhum dado financeiro encontrado. Importe a base com indicador e valor de venda.</div>';
+    }
+  }
+}
+
+function renderDashboard() {
+  const ativos = allData.filter(r=>!chkInativo(r));
+  document.getElementById('sTotal').textContent = allData.length;
+  document.getElementById('sVencido').textContent = ativos.filter(r=>getDias(r.dataVencimento)<0).length;
+  document.getElementById('sUrgente').textContent = ativos.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>=0&&d<=15;}).length;
+  document.getElementById('sAtencao').textContent = ativos.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>15&&d<=45;}).length;
+  document.getElementById('sEmdia').textContent = ativos.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>45;}).length;
+  document.getElementById('sInativo').textContent = allData.filter(r=>chkInativo(r)).length;
+
+  // Sem contato urgentes
+  const semContato = ativos.filter(r=>(r.statusContato||'nao-contatado')==='nao-contatado'&&(getDias(r.dataVencimento)<0||(getDias(r.dataVencimento)!==null&&getDias(r.dataVencimento)<=45)));
+  const scEl2 = document.getElementById('sSemContato');
+  if(scEl2) scEl2.textContent = semContato.length;
+  // Receita estimada
+  let totalEst = 0;
+  ativos.filter(r=>getStatus(r.dataVencimento).key!=='emdia').forEach(r=>{
+    const tipo = (r.tipoCertificado||'outros').trim();
+    totalEst += precos[tipo]||precos['outros']||150;
+  });
+  document.getElementById('sReceita').textContent = fmtMoney(totalEst);
+
+  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  renderCharts();
+  renderAlertas();
+  renderNotifications();
+  renderFinanceiro();
+}
+
+function renderCharts() {
+  const ativos = allData.filter(r=>r.statusContato!=='inativo');
+  const cOpts = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#8892b0', font:{family:'Plus Jakarta Sans',size:11} } } } };
+
+  // Status cert
+  if(charts.status) charts.status.destroy();
+  const ctxS = document.getElementById('chartStatus').getContext('2d');
+  charts.status = new Chart(ctxS,{ type:'doughnut', data:{ labels:['Vencidos','Urgentes','Atenção','Em Dia'],
+    datasets:[{ data:[
+      ativos.filter(r=>getDias(r.dataVencimento)<0).length,
+      ativos.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>=0&&d<=15;}).length,
+      ativos.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>15&&d<=45;}).length,
+      ativos.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>45;}).length
+    ], backgroundColor:['#f05e6a','#f5943c','#f5c842','#2ecc8a'], borderWidth:0 }]
+  }, options:{...cOpts} });
+
+  // Status contato
+  if(charts.contato) charts.contato.destroy();
+  const ctxC = document.getElementById('chartContato').getContext('2d');
+  const scLabels = ['Não Contatado','Contatado','Respondeu','Agendado','Renovando','Concluído'];
+  const scKeys = ['nao-contatado','contatado','respondeu','agendado','renovando','concluido'];
+  charts.contato = new Chart(ctxC,{ type:'bar', data:{ labels:scLabels,
+    datasets:[{ data: scKeys.map(k=>ativos.filter(r=>(r.statusContato||'nao-contatado')===k).length),
+    backgroundColor:['#4a5568','#6c8ef5','#2ecc8a','#f5c842','#a78bfa','#22d3ee'], borderRadius:6 }]
+  }, options:{...cOpts, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#1e2335'}}, y:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#1e2335'}} }} });
+
+  // Vencimentos próximos 90d
+  if(charts.venc) charts.venc.destroy();
+  const ctxV = document.getElementById('chartVenc').getContext('2d');
+  const meses = [];
+  const mQtd = [];
+  for(let m=0;m<6;m++){
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()+m);
+    const mes = d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+    meses.push(mes);
+    mQtd.push(ativos.filter(r=>{
+      if(!r.dataVencimento) return false;
+      const rv = new Date(r.dataVencimento+'T00:00:00');
+      return rv.getMonth()===d.getMonth()&&rv.getFullYear()===d.getFullYear();
+    }).length);
+  }
+  charts.venc = new Chart(ctxV,{ type:'bar', data:{ labels:meses,
+    datasets:[{ label:'Vencimentos', data:mQtd, backgroundColor:'rgba(108,142,245,0.5)', borderColor:'#6c8ef5', borderWidth:2, borderRadius:6 }]
+  }, options:{...cOpts, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#8892b0'},grid:{color:'#1e2335'}}, y:{ticks:{color:'#8892b0'},grid:{color:'#1e2335'}} }} });
+
+  // Pagamentos
+  if(charts.pgto) charts.pgto.destroy();
+  const ctxP = document.getElementById('chartPgto').getContext('2d');
+  charts.pgto = new Chart(ctxP,{ type:'doughnut', data:{ labels:['Não Info.','Pendente','Parcial','Pago'],
+    datasets:[{ data:['nao-informado','pendente','parcial','pago'].map(k=>ativos.filter(r=>(r.situacaoPagamento||'nao-informado')===k).length),
+    backgroundColor:['#4a5568','#f05e6a','#f5c842','#2ecc8a'], borderWidth:0 }]
+  }, options:{...cOpts} });
+}
+
+function renderAlertas() {
+  const ativos = allData.filter(r=>r.statusContato!=='inativo');
+  const vencidos = ativos.filter(r=>getDias(r.dataVencimento)<0);
+  const urgentes = ativos.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>=0&&d<=15;});
+  let html = '';
+  if(vencidos.length>0) html+=`<div style="background:rgba(240,94,106,0.08);border:1px solid rgba(240,94,106,0.3);border-radius:10px;padding:14px 18px;margin-bottom:12px;"><strong style="color:var(--red)">🔴 ${vencidos.length} certificado(s) vencido(s)</strong> — necessitam ação imediata!<button class="btn btn-danger btn-sm" style="margin-left:12px" onclick="setFilter('vencido',null);showPage('certificados')">Ver →</button></div>`;
+  if(urgentes.length>0) html+=`<div style="background:rgba(245,148,60,0.08);border:1px solid rgba(245,148,60,0.3);border-radius:10px;padding:14px 18px;margin-bottom:12px;"><strong style="color:var(--orange)">🟠 ${urgentes.length} certificado(s) urgente(s)</strong> — vencem em até 15 dias!<button class="btn btn-sm" style="background:rgba(245,148,60,0.15);color:var(--orange);border:none;margin-left:12px;cursor:pointer" onclick="setFilter('urgente',null);showPage('certificados')">Ver →</button></div>`;
+  document.getElementById('alertasRapidos').innerHTML = html;
+}
+
+// ============================================================
+// NOTIFICATIONS (Bell)
+// ============================================================
+function renderNotifications() {
+  const urgentes = allData.filter(r=>!chkInativo(r)&&getDias(r.dataVencimento)!==null&&getDias(r.dataVencimento)>=0&&getDias(r.dataVencimento)<=30);
+  const vencidos = allData.filter(r=>!chkInativo(r)&&getDias(r.dataVencimento)!==null&&getDias(r.dataVencimento)<0);
+  const total = urgentes.length+vencidos.length;
+  document.getElementById('bellDot').classList.toggle('show', total>0);
+  const list = document.getElementById('notifList');
+  if(!total){ list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);">Tudo em dia! ✅</div>'; return; }
+  list.innerHTML = [...vencidos.slice(0,5).map(r=>`<div class="notif-drop-item"><span class="ni-icon">🔴</span><div><div class="ni-title">${r.razaoSocial}</div><div class="ni-text">Vencido há ${Math.abs(getDias(r.dataVencimento))} dia(s)</div></div></div>`),
+    ...urgentes.slice(0,5).map(r=>`<div class="notif-drop-item"><span class="ni-icon">🟠</span><div><div class="ni-title">${r.razaoSocial}</div><div class="ni-text">Vence em ${getDias(r.dataVencimento)} dia(s)</div></div></div>`)].join('');
+}
+function toggleNotifDropdown() {
+  document.getElementById('notifDropdown').classList.toggle('open');
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.bell-wrap')) document.getElementById('notifDropdown').classList.remove('open'); });
+
+function updateNavBadge() {
+  const count = allData.filter(r=>!chkInativo(r)&&getDias(r.dataVencimento)<0).length;
+  const badge = document.getElementById('navBadgeVenc');
+  if(count>0){ badge.textContent=count; badge.style.display=''; } else badge.style.display='none';
+}
+
+// ============================================================
+// FILTERS
+// ============================================================
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.chip[data-f]').forEach(c=>c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else { const c = document.querySelector(`[data-f="${f}"]`); if(c) c.classList.add('active'); }
+  renderTable();
+}
+function setFilterC(f, el) {
+  currentFilterC = f;
+  document.querySelectorAll('.chip[data-fc]').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+function doSearch(v) { currentSearch=v; renderTable(); }
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) closeModal(o.id); }));
+
+// ============================================================
+// FORM — ADD/EDIT
+// ============================================================
+function resetForm() {
+  ['fRazao','fCnpj','fFantasia','fContato','fWa','fEmail','fVenc','fSocio','fDUC','fResp','fObs','fAgedData','fAgedHora','fValor'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fTipoCert').value='';
+  document.getElementById('fTipo').value='pj';
+  document.getElementById('fSC').value='nao-contatado';
+  document.getElementById('fPG').value='nao-informado';
+  document.getElementById('cnpjHint').innerHTML='';
+  document.querySelectorAll('.option-btn[data-tp]').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('[data-tp="pj"]').classList.add('sel');
+  document.querySelectorAll('.option-btn[data-sc]').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('[data-sc="nao-contatado"]').classList.add('sel');
+  document.querySelectorAll('.option-btn[data-pg]').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('[data-pg="nao-informado"]').classList.add('sel');
+  document.getElementById('agendRow').style.display='none';
+  document.getElementById('horariosLivresWrap').style.display='none';
+}
+function openAddForm() {
+  editIdx=-1; resetForm();
+  document.getElementById('formModalTitle').textContent='Adicionar Certificado';
+  openModal('formModal');
+}
+function openEdit(i) {
+  editIdx=i; const r=allData[i]; resetForm();
+  document.getElementById('formModalTitle').textContent='Editar Certificado';
+  document.getElementById('fRazao').value=r.razaoSocial||'';
+  document.getElementById('fCnpj').value=r.cnpj||'';
+  document.getElementById('fFantasia').value=r.nomeFantasia||'';
+  document.getElementById('fContato').value=r.nomeContato||'';
+  document.getElementById('fWa').value=r.whatsapp||'';
+  document.getElementById('fEmail').value=r.email||'';
+  document.getElementById('fVenc').value=r.dataVencimento||'';
+  document.getElementById('fSocio').value=r.socioResponsavel||'';
+  document.getElementById('fDUC').value=r.dataUltimoContato||'';
+  document.getElementById('fResp').value=r.responsavel||'';
+  document.getElementById('fObs').value=r.observacoes||'';
+  document.getElementById('fValor').value=r.valorCobrado||'';
+  document.getElementById('fValorVenda').value=r.valorVenda||'';
+  document.getElementById('fIndicador').value=r.indicador||'Próprio';
+  document.getElementById('fNomeSocio').value=r.nomeSocioCPF||'';
+  document.getElementById('fCpfSocio').value=r.cpfSocio||'';
+  document.getElementById('fVencCpf').value=r.dataVencimentoCPF||'';
+  calcFinanceiroForm();
+  document.getElementById('fTipoCert').value=r.tipoCertificado||'';
+  document.getElementById('fAgedData').value=r.dataAgendamento||'';
+  document.getElementById('fAgedHora').value=r.horaAgendamento||'';
+  document.getElementById('fSC').value=r.statusContato||'nao-contatado';
+  document.getElementById('fPG').value=r.situacaoPagamento||'nao-informado';
+  document.getElementById('fTipo').value=r.tipoCertificadoPF_PJ||'pj';
+  // tipo buttons
+  document.querySelectorAll('.option-btn[data-tp]').forEach(b=>b.classList.remove('sel'));
+  (r.tipoCertificadoPF_PJ||'pj').split(',').forEach(t=>{ const el=document.querySelector(`[data-tp="${t.trim()}"]`); if(el) el.classList.add('sel'); });
+  document.querySelectorAll('.option-btn[data-sc]').forEach(b=>b.classList.remove('sel'));
+  const scEl = document.querySelector(`[data-sc="${r.statusContato||'nao-contatado'}"]`); if(scEl) scEl.classList.add('sel');
+  document.querySelectorAll('.option-btn[data-pg]').forEach(b=>b.classList.remove('sel'));
+  const pgEl = document.querySelector(`[data-pg="${r.situacaoPagamento||'nao-informado'}"]`); if(pgEl) pgEl.classList.add('sel');
+  if((r.statusContato||'')==='agendado'){ document.getElementById('agendRow').style.display='grid'; renderHorariosLivres(); document.getElementById('horariosLivresWrap').style.display='block'; }
+  openModal('formModal');
+}
+function toggleTipo(tp, el) {
+  el.classList.toggle('sel');
+  const sel = [...document.querySelectorAll('.option-btn[data-tp].sel')].map(b=>b.dataset.tp);
+  document.getElementById('fTipo').value = sel.join(',') || 'pj';
+}
+function selSC(sc, el) {
+  document.querySelectorAll('.option-btn[data-sc]').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('fSC').value=sc;
+  if(sc==='agendado'){ document.getElementById('agendRow').style.display='grid'; renderHorariosLivres(); document.getElementById('horariosLivresWrap').style.display='block'; }
+  else { document.getElementById('agendRow').style.display='none'; document.getElementById('horariosLivresWrap').style.display='none'; }
+}
+function selPG(pg, el) {
+  document.querySelectorAll('.option-btn[data-pg]').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('fPG').value=pg;
+}
+function saveForm() {
+  const razao = document.getElementById('fRazao').value.trim();
+  const cnpj = document.getElementById('fCnpj').value.trim();
+  const venc = document.getElementById('fVenc').value;
+  if(!razao||!cnpj||!venc){ notify('Preencha os campos obrigatórios (*)','error'); return; }
+  const row = {
+    razaoSocial:razao, cnpj, nomeFantasia:document.getElementById('fFantasia').value,
+    nomeContato:document.getElementById('fContato').value, whatsapp:document.getElementById('fWa').value,
+    email:document.getElementById('fEmail').value, dataVencimento:venc,
+    socioResponsavel:document.getElementById('fSocio').value,
+    statusContato:document.getElementById('fSC').value,
+    tipoCertificadoPF_PJ:document.getElementById('fTipo').value,
+    situacaoPagamento:document.getElementById('fPG').value,
+    dataAgendamento:document.getElementById('fAgedData').value,
+    horaAgendamento:document.getElementById('fAgedHora').value,
+    dataUltimoContato:document.getElementById('fDUC').value,
+    responsavel:document.getElementById('fResp').value,
+    indicador:document.getElementById('fIndicador').value||'Próprio',
+    valorVenda:parseFloat(document.getElementById('fValorVenda').value)||0,
+    nomeSocioCPF:document.getElementById('fNomeSocio').value,
+    cpfSocio:document.getElementById('fCpfSocio').value,
+    dataVencimentoCPF:document.getElementById('fVencCpf').value,
+    observacoes:document.getElementById('fObs').value,
+    valorCobrado:parseFloat(document.getElementById('fValor').value)||0,
+    tipoCertificado:document.getElementById('fTipoCert').value
+  };
+  if(editIdx>=0) { allData[editIdx]={...allData[editIdx],...row}; notify('Certificado atualizado!'); }
+  else { row.dataEntrada=new Date().toISOString().split('T')[0]; row.historico=[]; allData.push(row); notify('Certificado adicionado!'); }
+  save(); renderTable(); renderHorariosGrid(); closeModal('formModal');
+}
+function calcFinanceiroForm() {
+  const venda = parseFloat(document.getElementById('fValorVenda')?.value)||0;
+  const tipo = (document.getElementById('fTipo')?.value||'pj').toLowerCase();
+  const indicador = (document.getElementById('fIndicador')?.value||'').trim().toLowerCase();
+  // Calcular custo correto por tipo selecionado
+  const temPJ = tipo.includes('pj');
+  const temPF = tipo.includes('pf');
+  const custo = (temPJ ? 86.90 : 0) + (temPF ? 61.04 : 0);
+  const custoPJ = temPJ ? 86.90 : 0;
+  const custoPF = temPF ? 61.04 : 0;
+  const lucro = venda - custo;
+  const temIndicador = indicador && indicador !== 'próprio' && indicador !== '';
+  const comissao = temIndicador ? Math.round(lucro*0.5*100)/100 : 0;
+  const lucroTaty = temIndicador ? Math.round(lucro*0.5*100)/100 : Math.round(lucro*100)/100;
+  const prev = document.getElementById('financeiroPreview');
+  const grid = document.getElementById('financeiroGrid');
+  if(!prev||!grid) return;
+  if(venda > 0) {
+    prev.style.display = 'block';
+    grid.innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Custo Total</div>
+        <div style="font-size:15px;font-weight:800;color:var(--red);font-family:'JetBrains Mono',monospace">R$ ${custo.toFixed(2)}</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">${temPJ&&temPF?`e-CNPJ R$${custoPJ.toFixed(2)} + e-CPF R$${custoPF.toFixed(2)}`:temPF?'e-CPF':'e-CNPJ'}</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Lucro Total</div>
+        <div style="font-size:15px;font-weight:800;color:${lucro>=0?'var(--green)':'var(--red)'};font-family:'JetBrains Mono',monospace">R$ ${lucro.toFixed(2)}</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">venda - custo</div>
+      </div>
+      ${temIndicador?`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Comissão ${indicador.charAt(0).toUpperCase()+indicador.slice(1)}</div>
+        <div style="font-size:15px;font-weight:800;color:var(--purple);font-family:'JetBrains Mono',monospace">R$ ${comissao.toFixed(2)}</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">50%</div>
+      </div>`:''}
+      <div style="background:rgba(0,214,143,0.08);border:1px solid rgba(0,214,143,0.25);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">💚 Sua Comissão</div>
+        <div style="font-size:16px;font-weight:800;color:var(--green);font-family:'JetBrains Mono',monospace">R$ ${lucroTaty.toFixed(2)}</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">${temIndicador?'50%':'100%'}</div>
+      </div>`;
+  } else {
+    prev.style.display = 'none';
+  }
+}
+
+function toggleAtivo(i) {
+  const r = allData[i];
+  const eraInativo = (r.statusContato || '') === 'inativo';
+  if(eraInativo) {
+    allData[i].statusContato = 'nao-contatado';
+    allData[i].situacao = 'ativo';
+    if(!allData[i].historico) allData[i].historico = [];
+    allData[i].historico.push({icon:'✅',title:'Cliente reativado',date:new Date().toLocaleDateString('pt-BR'),author:'Tatiane'});
+    notify('✅ Cliente reativado!');
+    setFilter('todos', document.querySelector('[data-f="todos"]'));
+  } else {
+    allData[i].statusContato = 'inativo';
+    allData[i].situacao = 'inativo';
+    if(!allData[i].historico) allData[i].historico = [];
+    allData[i].historico.push({icon:'⛔',title:'Cliente inativado',date:new Date().toLocaleDateString('pt-BR'),author:'Tatiane'});
+    notify('⛔ Cliente inativado!');
+  }
+  save(); renderTable(); renderDashboard();
+}
+
+function delRow(i) {
+  if(confirm('Excluir este certificado?')){ allData.splice(i,1); save(); renderTable(); notify('Excluído!'); }
+}
+
+// ============================================================
+// CNPJ AUTO-BUSCA
+// ============================================================
+function onCnpjInput(el) {
+  if(cnpjTimer) clearTimeout(cnpjTimer);
+  let v = el.value.replace(/[^\d]/g,'').slice(0,14);
+  if(v.length>12) v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');
+  else if(v.length>8) v=v.replace(/(\d{2})(\d{3})(\d{3})(\d+)/,'$1.$2.$3/$4');
+  else if(v.length>5) v=v.replace(/(\d{2})(\d{3})(\d+)/,'$1.$2.$3');
+  else if(v.length>2) v=v.replace(/(\d{2})(\d+)/,'$1.$2');
+  el.value=v;
+  const clean = v.replace(/[^\d]/g,'');
+  if(clean.length===14&&clean!==lastCnpj) cnpjTimer=setTimeout(()=>buscarCnpj(true),600);
+  else document.getElementById('cnpjHint').innerHTML = clean.length>0&&clean.length<14?`<span style="color:var(--text3)">${clean.length}/14 dígitos</span>`:'';
+}
+async function buscarCnpj(auto=false) {
+  const cnpj = document.getElementById('fCnpj').value.replace(/[^\d]/g,'');
+  if(cnpj.length!==14){ if(!auto) notify('CNPJ inválido','error'); return; }
+  lastCnpj=cnpj;
+  const hint = document.getElementById('cnpjHint');
+  hint.innerHTML='<span style="color:var(--accent)">⏳ Consultando Receita Federal...</span>';
+  // Função para extrair dados normalizados de qualquer API
+  function extrairDados(data, fonte) {
+    if(!data) return null;
+    let razao='', fantasia='', socio='', email='', telefone='';
+    if(fonte==='brasilapi') {
+      razao = data.razao_social||'';
+      fantasia = data.nome_fantasia||'';
+      const qs = data.qsa||[];
+      socio = qs.length>0 ? (qs[0].nome_socio||qs[0].nome||'') : '';
+      email = data.email||'';
+      telefone = data.ddd_telefone_1 ? (data.ddd_telefone_1).replace(/[^\d]/g,'') : '';
+    } else if(fonte==='cnpjws') {
+      razao = data.razao_social||'';
+      fantasia = data.estabelecimento?.nome_fantasia||data.nome_fantasia||'';
+      const qs = data.socios||[];
+      socio = qs.length>0 ? (qs[0].nome||'') : '';
+      email = data.estabelecimento?.email||data.email||'';
+      telefone = data.estabelecimento?.ddd1&&data.estabelecimento?.telefone1 ? data.estabelecimento.ddd1+data.estabelecimento.telefone1 : '';
+    } else if(fonte==='receitaws') {
+      razao = data.nome||'';
+      fantasia = data.fantasia||'';
+      socio = data.qsa?.length>0 ? (data.qsa[0].nome||'') : '';
+      email = data.email||'';
+      telefone = data.telefone ? data.telefone.replace(/[^\d]/g,'') : '';
+    }
+    return { razao, fantasia, socio, email, telefone };
+  }
+  // Lista de APIs em ordem de prioridade
+  const apis = [
+    { url: `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, fonte: 'brasilapi' },
+    { url: `https://publica.cnpj.ws/cnpj/${cnpj}`, fonte: 'cnpjws' },
+    { url: `https://receitaws.com.br/v1/cnpj/${cnpj}`, fonte: 'receitaws' },
+  ];
+  let dados = null;
+  let fonteUsada = '';
+  for(const api of apis) {
+    try {
+      const r = await fetch(api.url, { headers: { 'Accept': 'application/json' } });
+      if(r.ok) {
+        const data = await r.json();
+        const d = extrairDados(data, api.fonte);
+        if(d && d.razao) { dados=d; fonteUsada=api.fonte; break; }
+      }
+    } catch(e) { /* tenta próxima */ }
+  }
+  if(dados) {
+    if(dados.razao) document.getElementById('fRazao').value = dados.razao;
+    if(dados.fantasia) document.getElementById('fFantasia').value = dados.fantasia;
+    if(dados.socio) document.getElementById('fSocio').value = dados.socio;
+    if(dados.email && !document.getElementById('fEmail').value) document.getElementById('fEmail').value = dados.email;
+    if(dados.telefone && !document.getElementById('fWa').value) {
+      const tel = dados.telefone.length>=10 ? '55'+dados.telefone : dados.telefone;
+      document.getElementById('fWa').value = tel;
+    }
+    hint.innerHTML=`<span style="color:var(--green)">✅ Dados carregados! (${fonteUsada})</span>`;
+  } else {
+    hint.innerHTML='<span style="color:var(--orange)">⚠️ Não encontrado nas APIs — verifique o CNPJ ou preencha manualmente</span>';
+  }
+}
+
+// ============================================================
+// HISTÓRICO
+// ============================================================
+function openHist(i) {
+  histIdx=i;
+  document.getElementById('histNome').textContent=allData[i].razaoSocial||'';
+  document.getElementById('histNovaObs').value='';
+  renderHistList();
+  openModal('histModal');
+}
+function renderHistList() {
+  const r = allData[histIdx];
+  const hist = r.historico||[];
+  const list = document.getElementById('histList');
+  if(!hist.length){ list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);">Nenhum registro no histórico</div>'; return; }
+  list.innerHTML = [...hist].reverse().map(h=>`
+    <div class="hist-item">
+      <div class="hist-icon">${h.icon||'📝'}</div>
+      <div class="hist-content">
+        <div class="hist-title">${h.title||'Observação'}</div>
+        <div class="hist-meta">${h.date||''} · ${h.author||'Sistema'}</div>
+        ${h.note?`<div class="hist-note">${h.note}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+function addHistEntry() {
+  const obs = document.getElementById('histNovaObs').value.trim();
+  if(!obs) return;
+  if(!allData[histIdx].historico) allData[histIdx].historico=[];
+  allData[histIdx].historico.push({ icon:'📝', title:'Observação', note:obs, date:new Date().toLocaleDateString('pt-BR'), author:'Tatiane' });
+  document.getElementById('histNovaObs').value='';
+  renderHistList(); save();
+  notify('Entrada adicionada ao histórico!');
+}
+
+// ============================================================
+// MENSAGEM
+// ============================================================
+const msgTemplates = {
+  'primeiro-contato':{ pj:`Olá! Tudo bem?\n\nMe chamo Tatiane, da empresa TG Serviços Adm e Certificado Digital, somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais.\n\nEstou entrando em contato para tratarmos sobre a renovação do certificado digital da empresa {{razaoSocial}} (CNPJ {{cnpj}}).\n\nPodemos conversar um instante para darmos andamento ao processo?`, pf:`Olá! Tudo bem?\n\nMe chamo Tatiane, da empresa TG Serviços Adm e Certificado Digital, somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais.\n\nEstou entrando em contato para tratarmos sobre a renovação do seu certificado digital (CPF {{cnpj}}).\n\nPodemos conversar um instante?`, ambos:`Olá! Tudo bem?\n\nMe chamo Tatiane, da TG Serviços Adm e Certificado Digital.\n\nEstou entrando em contato sobre a renovação dos certificados da empresa {{razaoSocial}} (CNPJ {{cnpj}}) e do e-CPF do sócio {{socioResponsavel}}.\n\nVencimento: {{dataVencimento}}\n\nPodemos conversar?` },
+  'lembrete':{ pj:`Olá {{nomeContato}}! 👋\n\nSeguindo nossa conversa, lembramos sobre a renovação do certificado digital da {{razaoSocial}} (CNPJ {{cnpj}}).\n\nVence em: {{dataVencimento}}\n\nA falta de renovação pode resultar em:\n❌ Bloqueio de emissão de NF-e\n❌ Impossibilidade de acesso ao e-CAC\n\nPodemos agendar?`, pf:`Olá {{nomeContato}}! 👋\n\nSeguindo nossa conversa, lembramos sobre a renovação do seu certificado digital.\n\nVence em: {{dataVencimento}}\n\nPodemos agendar?`, ambos:`Olá {{nomeContato}}! 👋\n\nLembramos sobre a renovação dos certificados da {{razaoSocial}} e do {{socioResponsavel}}.\n\nVence em: {{dataVencimento}}\n\nPodemos agendar?` },
+  'urgente':{ pj:`⚠️ URGENTE - {{razaoSocial}}\n\nOlá {{nomeContato}}, o certificado digital da sua empresa vence em breve!\n\nNecessitamos renovar com urgência para evitar bloqueios operacionais.\n\nPodemos agendar agora?`, pf:`⚠️ URGENTE\n\nOlá {{nomeContato}}, seu certificado digital vence em breve!\n\nPodemos agendar agora?`, ambos:`⚠️ URGENTE - {{razaoSocial}}\n\nOlá {{nomeContato}}, os certificados da sua empresa e do {{socioResponsavel}} vencem em breve!\n\nPodemos agendar com urgência?` },
+  'documentos':{ pj:`Para darmos andamento ao processo, preciso das seguintes informações:\n\n📄 Cópia da CNH do sócio responsável\n📍 Endereço completo (com CEP)\n📧 E-mail de fácil acesso\n📱 Telefone para contato\n\nAssim que receber, seguimos! Qualquer dúvida, estou à disposição.`, pf:`Para darmos andamento ao processo, preciso das seguintes informações:\n\n📄 Cópia da CNH\n📍 Endereço completo (com CEP)\n📧 E-mail de fácil acesso\n📱 Telefone para contato\n\nAssim que receber, seguimos!`, ambos:`Para darmos andamento, preciso das seguintes informações:\n\n📄 Cópia da CNH do sócio responsável\n📍 Endereço completo (com CEP)\n📧 E-mail de fácil acesso\n📱 Telefone para contato\n\nAguardo retorno!` },
+  'agradecimento':{ pj:`Obrigada {{nomeContato}}! 🙏\n\nAgradeçemos pela confiança em renovar o certificado digital da {{razaoSocial}} conosco.\n\nQualquer necessidade futura, estamos à disposição!`, pf:`Obrigada {{nomeContato}}! 🙏\n\nAgradeçemos pela confiança em renovar seu certificado digital conosco.\n\nQualquer necessidade, estamos à disposição!`, ambos:`Obrigada {{nomeContato}}! 🙏\n\nAgradeçemos pela confiança em renovar os certificados da {{razaoSocial}} e do {{socioResponsavel}} conosco!\n\nQualquer necessidade, estamos à disposição!` }
+};
+function gerarMsg(tmpl, row) {
+  const tipos = (row.tipoCertificadoPF_PJ||'pj').split(',');
+  const key = tipos.includes('pf')&&tipos.includes('pj')?'ambos':tipos.includes('pf')?'pf':'pj';
+  const tpl = msgTemplates[tmpl]||msgTemplates['primeiro-contato'];
+  let msg = tpl[key]||tpl.pj||'';
+  const dv = row.dataVencimento;
+  const diasR = getDias(dv);
+  const dvLabel = diasR!==null&&diasR<0?'Vencido em':diasR===0?'Venceu hoje':'Vencimento';
+  msg = msg.replace(/{{razaoSocial}}/g,row.razaoSocial||'');
+  msg = msg.replace(/{{cnpj}}/g,row.cnpj||'');
+  msg = msg.replace(/{{nomeContato}}/g,row.nomeContato||'Cliente');
+  msg = msg.replace(/{{socioResponsavel}}/g,row.socioResponsavel||'sócio');
+  msg = msg.replace(/{{dataVencimento}}/g,fmtDate(dv));
+  msg = msg.replace(/Vencimento:/g,dvLabel+':');
+  msg = msg.replace(/Vence em:/g,dvLabel+':');
+  return msg;
+}
+function openMsg(i) {
+  msgIdx=i;
+  const row = allData[i];
+  document.getElementById('msgTemplate').value='primeiro-contato';
+  const destEl = document.getElementById('msgDest');
+  if(destEl) destEl.textContent = (row.razaoSocial||'-') + (row.nomeContato?' — '+row.nomeContato:'') + (row.whatsapp?' ('+row.whatsapp+')':'');
+  document.querySelectorAll('#msgTabsWrap span').forEach((s,idx)=>{ if(idx===0){s.style.background='rgba(108,142,245,0.12)';s.style.borderColor='rgba(108,142,245,0.3)';s.style.color='var(--accent)';}else{s.style.background='var(--bg3)';s.style.borderColor='var(--border)';s.style.color='var(--text3)';}});
+  updateMsgPreview();
+  openModal('msgModal');
+}
+function updateMsgPreview() {
+  if(msgIdx<0) return;
+  const msg = gerarMsg(document.getElementById('msgTemplate').value, allData[msgIdx]);
+  document.getElementById('msgPreview').textContent = msg;
+  const cc = document.getElementById('msgCharCount');
+  if(cc) cc.textContent = msg.length + ' caracteres';
+}
+function setMsgTab(tmpl, el) {
+  document.getElementById('msgTemplate').value = tmpl;
+  document.querySelectorAll('#msgTabsWrap span').forEach(s=>{
+    s.style.background='var(--bg3)'; s.style.borderColor='var(--border)'; s.style.color='var(--text3)';
+  });
+  if(el) { el.style.background='rgba(108,142,245,0.12)'; el.style.borderColor='rgba(108,142,245,0.3)'; el.style.color='var(--accent)'; }
+  updateMsgPreview();
+}
+function copiarMsgPreview() {
+  const msg = document.getElementById('msgPreview').textContent;
+  navigator.clipboard.writeText(msg).then(()=>notify('Mensagem copiada!')).catch(()=>notify('Erro ao copiar','error'));
+}
+function enviarWa() {
+  const row = allData[msgIdx];
+  if(!row.whatsapp){ notify('WhatsApp não informado','error'); return; }
+  const msg = gerarMsg(document.getElementById('msgTemplate').value, row);
+  window.open(`https://wa.me/${row.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank');
+  // Registrar no histórico
+  if(!allData[msgIdx].historico) allData[msgIdx].historico=[];
+  allData[msgIdx].historico.push({ icon:'📱', title:'Mensagem enviada via WhatsApp', note:`Template: ${document.getElementById('msgTemplate').value}`, date:new Date().toLocaleDateString('pt-BR'), author:'Tatiane' });
+  save(); closeModal('msgModal'); notify('WhatsApp aberto com a mensagem!');
+}
+
+// ============================================================
+// DISPARO
+// ============================================================
+function abrirDisparo() {
+  if(!allData.length){ notify('Nenhum dado carregado','error'); return; }
+  clientesPendentes = allData.filter(r=>{
+    if((r.statusContato||'')==='inativo') return false;
+    const st = getStatus(r.dataVencimento);
+    return (st.key==='vencido'||st.key==='urgente'||st.key==='atencao')&&(r.statusContato||'nao-contatado')==='nao-contatado';
+  });
+  const semNum = clientesPendentes.filter(r=>!r.whatsapp).length;
+  const comNum = clientesPendentes.filter(r=>r.whatsapp).length;
+  document.getElementById('disparoTitle').textContent=`🚀 Disparo — ${clientesPendentes.length} clientes pendentes`;
+  document.getElementById('dispProgBar').style.display='none';
+  document.getElementById('dispProgText').textContent='';
+  document.getElementById('btnDisparo').disabled=comNum===0;
+  document.getElementById('disparoAviso').innerHTML=`Clientes com certificados vencidos, urgentes ou em atenção que ainda não foram contatados.${semNum>0?` ⚠️ <strong>${semNum}</strong> sem WhatsApp (não serão enviados).`:''}`;
+  filtrarDisparo('todos');
+  selecionarTemplate('primeiro-contato', document.querySelector('[data-tmpl="primeiro-contato"]'));
+  openModal('disparoModal');
+}
+function toggleDisp(i){ const c=document.getElementById(`dchk-${i}`); c.checked=!c.checked; updDispBtn(); }
+function selecionarTemplate(tmpl, el) {
+  document.getElementById('disparoTemplate').value = tmpl;
+  // Atualizar chips
+  document.querySelectorAll('#tmplChips .mes-chip').forEach(ch => {
+    ch.classList.remove('active');
+    ch.style.background = 'var(--bg3)';
+    ch.style.borderColor = 'var(--border)';
+    ch.style.color = 'var(--text3)';
+  });
+  if(el) {
+    el.classList.add('active');
+    el.style.background = 'rgba(79,142,255,0.12)';
+    el.style.borderColor = 'rgba(79,142,255,0.3)';
+    el.style.color = 'var(--accent)';
+  }
+  // Atualizar preview com exemplo do primeiro cliente pendente
+  atualizarPreviewDisparo();
+}
+
+function atualizarPreviewDisparo() {
+  const tmpl = document.getElementById('disparoTemplate')?.value || 'primeiro-contato';
+  const prev = document.getElementById('disparoMsgPreview');
+  const count = document.getElementById('disparoCharCount');
+  const tipo = document.getElementById('disparoTmplTipo');
+  if(!prev) return;
+  // Usar primeiro cliente selecionado como exemplo, ou criar exemplo genérico
+  const exemplo = clientesPendentes.find(r => r.whatsapp) || {
+    razaoSocial: 'EMPRESA EXEMPLO LTDA',
+    cnpj: '00.000.000/0001-00',
+    nomeContato: 'João',
+    socioResponsavel: 'Maria Silva',
+    dataVencimento: new Date().toISOString().split('T')[0],
+    tipoCertificadoPF_PJ: 'pj'
+  };
+  const msg = gerarMsg(tmpl, exemplo);
+  prev.textContent = msg;
+  if(count) count.textContent = msg.length + ' caracteres';
+  const tmplNomes = {
+    'primeiro-contato':'🤝 Primeiro Contato',
+    'lembrete':'👋 Lembrete',
+    'urgente':'⚠️ Urgente',
+    'documentos':'📄 Documentos',
+    'agradecimento':'🙏 Agradecimento'
+  };
+  if(tipo) tipo.textContent = tmplNomes[tmpl] || tmpl;
+}
+
+function filtrarDisparo(tipo) {
+  // Filtrar quais clientes mostrar no disparo
+  let filtrados = allData.filter(r => {
+    if((r.statusContato||'')==='inativo') return false;
+    if(!r.whatsapp) return false;
+    const st = getStatus(r.dataVencimento).key;
+    if(tipo==='vencido') return st==='vencido';
+    if(tipo==='urgente') return st==='urgente';
+    if(tipo==='atencao') return st==='atencao';
+    // "todos pendentes" = vencido, urgente ou atenção (com ou sem contato anterior)
+    return st==='vencido'||st==='urgente'||st==='atencao';
+  });
+  clientesPendentes = filtrados;
+  const comNum = filtrados.filter(r=>r.whatsapp).length;
+  document.getElementById('disparoTitle').textContent=`🚀 Disparo — ${filtrados.length} clientes`;
+  document.getElementById('btnDisparo').disabled = comNum===0;
+  document.getElementById('btnDisparo').textContent = comNum>0?`🚀 Enviar para ${comNum}`:'🚀 Enviar Selecionados';
+  // Atualizar estilo dos chips
+  ['vencido','urgente','atencao','todos'].forEach(t=>{
+    const el=document.getElementById('df-'+t);
+    if(!el)return;
+    if(t===tipo){el.style.background='rgba(79,142,255,0.12)';el.style.borderColor='rgba(79,142,255,0.3)';el.style.color='var(--accent)';}
+    else{el.style.background='var(--bg3)';el.style.borderColor='var(--border)';el.style.color='var(--text3)';}
+  });
+  const lista = document.getElementById('disparoLista');
+  if(!filtrados.length){
+    lista.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">✅ Nenhum cliente pendente neste filtro!</div>';
+    return;
+  }
+  lista.innerHTML=`<div class="disparo-item" onclick="toggleTodosDisparo()" style="border-bottom:2px solid var(--border);background:var(--bg3)">
+    <input type="checkbox" class="disparo-check" id="chkAll" onclick="event.stopPropagation();toggleTodosDisparo()"/>
+    <div class="disparo-info"><div class="disparo-nome">Selecionar todos (${comNum} com WhatsApp)</div></div>
+  </div>`+
+  filtrados.map((r,i)=>{
+    const dias=getDias(r.dataVencimento);
+    const st=getStatus(r.dataVencimento);
+    return `<div class="disparo-item" onclick="${r.whatsapp?`toggleDisp(${i})`:''}">
+      <input type="checkbox" class="disparo-check" id="dchk-${i}" ${!r.whatsapp?'disabled':''} onclick="event.stopPropagation();updDispBtn()"/>
+      <div class="disparo-info">
+        <div class="disparo-nome">${r.razaoSocial||'-'}</div>
+        <div class="disparo-meta">${r.cnpj||''} · <span class="badge ${st.cls}" style="font-size:9.5px">${st.label}</span> · ${dias}d · ${!r.whatsapp?'⚠️ Sem WhatsApp':r.whatsapp}</div>
+      </div>
+      <div class="disparo-status" id="dst-${i}">${r.whatsapp?'⏳':'⚠️'}</div>
+    </div>`;
+  }).join('');
+  updDispBtn();
+}
+
+function toggleTodosDisparo(){ const all=document.getElementById('chkAll'); all.checked=!all.checked; clientesPendentes.forEach((_,i)=>{ const c=document.getElementById(`dchk-${i}`); if(c&&!c.disabled) c.checked=all.checked; }); updDispBtn(); }
+function updDispBtn(){ const n=clientesPendentes.filter((_,i)=>{ const c=document.getElementById(`dchk-${i}`); return c&&c.checked; }).length; const btn=document.getElementById('btnDisparo'); btn.disabled=n===0; btn.textContent=n>0?`🚀 Enviar para ${n} cliente(s)`:'🚀 Enviar Selecionados'; atualizarPreviewDisparo(); }
+async function iniciarDisparo() {
+  const id=localStorage.getItem('zapiId'); const tk=localStorage.getItem('zapiToken'); const ct=localStorage.getItem('zapiCt');
+  if(!id||!tk){ notify('Configure o Z-API primeiro!','error'); return; }
+  const sels = clientesPendentes.map((r,i)=>({r,i})).filter(({i})=>{ const c=document.getElementById(`dchk-${i}`); return c&&c.checked&&clientesPendentes[i].whatsapp; });
+  if(!sels.length){ notify('Selecione pelo menos um cliente','error'); return; }
+  disparoInProgress=true;
+  logDisparo=[];
+  document.getElementById('btnDisparo').disabled=true;
+  document.getElementById('btnDisparo').textContent='⏳ Enviando...';
+  const progBar=document.getElementById('dispProgBar'); if(progBar) progBar.style.display='block';
+  const logWrap=document.getElementById('logDisparoWrap'); if(logWrap) logWrap.style.display='block';
+  const logList=document.getElementById('logDisparoList'); if(logList) logList.innerHTML='';
+  let env=0,err=0,total=sels.length;
+  for(const {r,i} of sels){
+    if(!disparoInProgress) break;
+    const stEl=document.getElementById(`dst-${i}`);
+    if(stEl){stEl.textContent='📤 Enviando...'; stEl.className='disparo-status enviando';}
+    const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const tmpl=document.getElementById('disparoTemplate')?.value||'primeiro-contato';
+    const msg=gerarMsg(tmpl,r);
+    // Adicionar ao log como enviando
+    adicionarLog({status:'enviando',nome:r.razaoSocial,whatsapp:r.whatsapp,hora,tmpl});
+    const res=await zapiSend(id,tk,ct,r.whatsapp,msg);
+    const ok=res.ok;
+    const horaFim=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    if(ok){
+      if(stEl){stEl.textContent='✅ Enviado'; stEl.className='disparo-status enviado';} env++;
+      const oi=allData.indexOf(r);
+      if(oi>=0){
+        allData[oi].statusContato='contatado';
+        allData[oi].dataUltimoContato=new Date().toISOString().split('T')[0];
+        if(!allData[oi].historico) allData[oi].historico=[];
+        allData[oi].historico.push({icon:'🚀',title:'Disparo automático enviado',note:`Template: ${tmpl}`,date:new Date().toLocaleDateString('pt-BR'),author:'Sistema'});
+      }
+      atualizarLog(logDisparo.length-1,'ok',horaFim);
+    } else {
+      if(stEl){stEl.textContent='❌ Erro'; stEl.className='disparo-status erro';} err++;
+      atualizarLog(logDisparo.length-1,'erro',horaFim, res.erro||'');
+    }
+    const prog=Math.round(((env+err)/total)*100);
+    document.getElementById('dispProgFill').style.width=prog+'%';
+    document.getElementById('dispProgText').textContent=`${env+err} de ${total} — ✅ ${env} enviados · ❌ ${err} erros`;
+    if(i<sels.length-1) await new Promise(res=>setTimeout(res,3000));
+  }
+  disparoInProgress=false; save(); renderTable();
+  document.getElementById('btnDisparo').textContent=`✅ Concluído — ${env} enviados · ${err} erros`;
+  notify(`Disparo concluído! ✅ ${env} enviados · ❌ ${err} erros`);
+  // Salvar log no localStorage
+  const logs=JSON.parse(localStorage.getItem('disparoLogs')||'[]');
+  logs.unshift({data:new Date().toLocaleString('pt-BR'),total,env,err,itens:logDisparo});
+  localStorage.setItem('disparoLogs',JSON.stringify(logs.slice(0,10))); // manter últimos 10
+}
+
+function adicionarLog({status,nome,whatsapp,hora,tmpl}){
+  logDisparo.push({status,nome,whatsapp,hora,tmpl,horaFim:''});
+  renderLog();
+}
+
+function atualizarLog(idx,status,horaFim,erroMsg=''){
+  if(logDisparo[idx]) { logDisparo[idx].status=status; logDisparo[idx].horaFim=horaFim; logDisparo[idx].erroMsg=erroMsg; }
+  renderLog();
+}
+
+function renderLog(){
+  const list=document.getElementById('logDisparoList');
+  if(!list) return;
+  list.innerHTML=logDisparo.map((l,i)=>{
+    const icon=l.status==='ok'?'✅':l.status==='erro'?'❌':'📤';
+    const cor=l.status==='ok'?'var(--green)':l.status==='erro'?'var(--red)':'var(--accent)';
+    return `<div class="log-item ${l.status}">
+      <span class="log-icon">${icon}</span>
+      <div class="log-info">
+        <div class="log-nome">${l.nome||'-'}</div>
+        <div class="log-meta">${l.whatsapp||'sem número'} · ${l.tmpl||''}</div>
+      </div>
+      <div class="log-hora">${l.horaFim||l.hora}</div>
+    </div>`;
+  }).join('');
+  // Scroll para o último
+  list.scrollTop=list.scrollHeight;
+}
+
+function exportarLogDisparo(){
+  if(!logDisparo.length){notify('Nenhum log para exportar','error');return;}
+  const rows=logDisparo.map(l=>({'Status':l.status==='ok'?'✅ Enviado':'❌ Erro','Cliente':l.nome,'WhatsApp':l.whatsapp,'Hora Início':l.hora,'Hora Fim':l.horaFim,'Template':l.tmpl}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Log Disparo');
+  XLSX.writeFile(wb,`log_disparo_${new Date().toISOString().split('T')[0]}.xlsx`);
+  notify('Log exportado!');
+}
+async function zapiSend(id,tk,ct,phone,msg){
+  try{
+    const ph=phone.replace(/[^\d]/g,'');
+    const h={'Content-Type':'application/json'};
+    if(ct) h['Client-Token']=ct;
+    const r=await fetch(`https://api.z-api.io/instances/${id}/token/${tk}/send-text`,{method:'POST',headers:h,body:JSON.stringify({phone:ph,message:msg})});
+    if(!r.ok){
+      const errBody=await r.json().catch(()=>({}));
+      console.error('Z-API erro:',r.status,errBody);
+      return {ok:false, erro:`${r.status}: ${errBody.error||errBody.message||JSON.stringify(errBody)}`};
+    }
+    return {ok:true, erro:''};
+  }catch(e){
+    console.error('Z-API catch:',e);
+    return {ok:false, erro:e.message||'Erro de conexão'};
+  }
+}
+
+// ============================================================
+// Z-API
+// ============================================================
+function salvarZapi(){ const id=document.getElementById('zapiId').value.trim(),tk=document.getElementById('zapiToken').value.trim(),ct=document.getElementById('zapiCt').value.trim(); if(!id||!tk){notify('Preencha Instance ID e Token','error');return;} localStorage.setItem('zapiId',id);localStorage.setItem('zapiToken',tk);localStorage.setItem('zapiCt',ct);setZapiStatus('ok','✅ Configuração salva!'); }
+async function testarZapi(){
+  const id=localStorage.getItem('zapiId')||document.getElementById('zapiId').value.trim();
+  const tk=localStorage.getItem('zapiToken')||document.getElementById('zapiToken').value.trim();
+  const ct=localStorage.getItem('zapiCt')||document.getElementById('zapiCt').value.trim();
+  if(!id||!tk){setZapiStatus('err','❌ Salve a configuração antes de testar');return;}
+  setZapiStatus('info','⏳ Verificando conexão...');
+  try{
+    const h={'Content-Type':'application/json'};
+    if(ct) h['Client-Token']=ct;
+    const r=await fetch(`https://api.z-api.io/instances/${id}/token/${tk}/status`,{headers:h});
+    const d=await r.json();
+    console.log('Z-API status:', r.status, d);
+    if(r.ok&&(d.connected||d.value==='CONNECTED'||d.status==='connected')){
+      setZapiStatus('ok','✅ WhatsApp conectado e pronto para enviar!');
+    } else if(r.status===403){
+      setZapiStatus('err','❌ Client-Token inválido. Verifique o token de segurança.');
+    } else {
+      setZapiStatus('ok','✅ Instância: '+(d.value||d.status||JSON.stringify(d)));
+    }
+  }catch(e){
+    setZapiStatus('err','❌ Erro: '+e.message);
+  }
+}
+function enviarMsgTeste(){
+  const id=localStorage.getItem('zapiId')||document.getElementById('zapiId').value.trim();
+  const tk=localStorage.getItem('zapiToken')||document.getElementById('zapiToken').value.trim();
+  const ct=localStorage.getItem('zapiCt')||document.getElementById('zapiCt').value.trim();
+  if(!id||!tk){setZapiStatus('err','❌ Salve as credenciais primeiro');return;}
+  const num=prompt('Digite o número para teste (com DDI, ex: 5511999999999):');
+  if(!num||num.trim()==='') return;
+  const phone=num.replace(/[^\d]/g,'');
+  setZapiStatus('info','⏳ Enviando mensagem de teste...');
+  const h={'Content-Type':'application/json'};
+  if(ct) h['Client-Token']=ct;
+  fetch(`https://api.z-api.io/instances/${id}/token/${tk}/send-text`,{
+    method:'POST',
+    headers:h,
+    body:JSON.stringify({phone:phone,message:'✅ Teste TG Certificados — envio funcionando!'})
+  })
+  .then(r=>r.json().then(d=>({status:r.status,data:d})))
+  .then(({status,data})=>{
+    console.log('Teste envio:', status, data);
+    if(status===200||status===201||data.zaapId||data.messageId){
+      setZapiStatus('ok','✅ Mensagem de teste enviada com sucesso!');
+    } else {
+      setZapiStatus('err','❌ Erro '+status+': '+JSON.stringify(data));
+    }
+  })
+  .catch(e=>setZapiStatus('err','❌ Erro de conexão: '+e.message));
+}
+
+function setZapiStatus(t,m){ const el=document.getElementById('zapiStatus');el.className='zapi-status-msg '+t;el.textContent=m; }
+function loadZapi(){ const id=localStorage.getItem('zapiId'),tk=localStorage.getItem('zapiToken'),ct=localStorage.getItem('zapiCt'); if(id)document.getElementById('zapiId').value=id; if(tk)document.getElementById('zapiToken').value=tk; if(ct)document.getElementById('zapiCt').value=ct; }
+
+// ============================================================
+// HORÁRIOS
+// ============================================================
+function addHorario(){
+  const d=document.getElementById('hData').value,h=document.getElementById('hHora').value;
+  if(!d||!h){notify('Preencha data e hora','error');return;}
+  if(!horariosDisp[d]) horariosDisp[d]=[];
+  if(horariosDisp[d].includes(h)){notify('Horário já cadastrado','error');return;}
+  horariosDisp[d].push(h);horariosDisp[d].sort();
+  localStorage.setItem('horariosDisp',JSON.stringify(horariosDisp));
+  renderHorariosGrid();notify('Horário adicionado!');
+  document.getElementById('hHora').value='';
+}
+function clearHorarios(){ if(confirm('Limpar todos os horários?')){ horariosDisp={}; localStorage.removeItem('horariosDisp'); renderHorariosGrid(); notify('Horários limpos!'); } }
+function remHorario(d,h){ if(confirm('Remover este horário?')){ horariosDisp[d]=horariosDisp[d].filter(x=>x!==h); if(!horariosDisp[d].length)delete horariosDisp[d]; localStorage.setItem('horariosDisp',JSON.stringify(horariosDisp)); renderHorariosGrid(); notify('Horário removido!'); } }
+function renderHorariosGrid(){
+  const grid=document.getElementById('horariosGrid');
+  const entries=[];
+  Object.keys(horariosDisp).sort().forEach(d=>horariosDisp[d].forEach(h=>entries.push({d,h})));
+  if(!entries.length){grid.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum horário cadastrado</div>';return;}
+  grid.innerHTML=entries.map(({d,h})=>{
+    const agd=allData.find(r=>r.dataAgendamento===d&&r.horaAgendamento===h);
+    return `<div class="horario-chip ${agd?'ocupado':'livre'}">
+      <div>${h}</div><div style="font-size:10px;margin-top:2px">${fmtDate(d)}</div>
+      ${agd?`<div style="font-size:10px;margin-top:2px">👤 ${(agd.razaoSocial||'').slice(0,12)}</div>`:''}
+      <button class="hc-remove" onclick="event.stopPropagation();remHorario('${d}','${h}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function renderHorariosLivres(){
+  const grid=document.getElementById('horariosLivresGrid');
+  const entries=[];
+  Object.keys(horariosDisp).sort().forEach(d=>horariosDisp[d].forEach(h=>{ const occ=allData.some((r,i)=>r.dataAgendamento===d&&r.horaAgendamento===h&&i!==editIdx); entries.push({d,h,occ}); }));
+  if(!entries.length){grid.innerHTML='<div style="color:var(--text3);font-size:12px">Nenhum horário disponível</div>';return;}
+  grid.innerHTML=entries.map(({d,h,occ})=>`<button class="option-btn ${occ?'':'sel'}" style="${occ?'opacity:0.4;cursor:not-allowed':''}" ${occ?'disabled':''} onclick="selHorario('${d}','${h}',this)">${h}<br><span style="font-size:10px;font-weight:400">${fmtDate(d)}</span></button>`).join('');
+}
+function selHorario(d,h,el){
+  document.querySelectorAll('#horariosLivresGrid .option-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('fAgedData').value=d;
+  document.getElementById('fAgedHora').value=h;
+}
+
+// ============================================================
+// RECEITA
+// ============================================================
+function renderPrecoInputs(){
+  const tipos=['e-CNPJ A1','e-CNPJ A3','e-CPF A1','e-CPF A3','outros'];
+  document.getElementById('precosGrid').innerHTML=tipos.map(t=>`
+    <div class="form-group">
+      <label>${t}</label>
+      <input type="number" id="preco-${t.replace(/\s/g,'-')}" value="${precos[t]||150}" min="0" step="10" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);width:100%"/>
+    </div>`).join('');
+}
+function salvarPrecos(){
+  ['e-CNPJ A1','e-CNPJ A3','e-CPF A1','e-CPF A3','outros'].forEach(t=>{ const el=document.getElementById('preco-'+t.replace(/\s/g,'-')); if(el) precos[t]=parseFloat(el.value)||0; });
+  localStorage.setItem('precos',JSON.stringify(precos));
+  calcularReceita(); notify('Preços salvos!');
+}
+function calcularReceita(){
+  const ativos=allData.filter(r=>r.statusContato!=='inativo');
+  // KPIs por indicador
+  const indicadores={};
+  ativos.forEach(r=>{
+    const ind=r.indicador||'Próprio';
+    if(!indicadores[ind]) indicadores[ind]={nome:ind,clientes:0,lucroTaty:0,comissao:0};
+    const tipo=(r.tipoCertificadoPF_PJ||'pj').toLowerCase();
+    const custo=tipo.includes('pf')?61.04:86.90;
+    const venda=parseFloat(r.valorVenda||r.valorCobrado||0);
+    const lucro=venda-custo;
+    const temInd=ind&&ind!=='Próprio';
+    indicadores[ind].clientes++;
+    indicadores[ind].lucroTaty+=temInd?lucro*0.5:lucro;
+    if(temInd)indicadores[ind].comissao+=lucro*0.5;
+  });
+  const kpiEl=document.getElementById('kpiIndicadores');
+  if(kpiEl){
+    kpiEl.innerHTML=Object.values(indicadores).map(ind=>`
+      <div class="stat-card c-total" style="min-width:0">
+        <div class="stat-glow"></div>
+        <div class="stat-label">${ind.nome==='Próprio'?'👤 Clientes Próprios':'🤝 '+ind.nome}</div>
+        <div style="font-size:18px;font-weight:800;color:${ind.nome==='Próprio'?'var(--green)':'var(--purple)'}">R$ ${ind.lucroTaty.toFixed(2)}</div>
+        <div class="stat-sub">${ind.clientes} clientes${ind.comissao>0?' · Comissão: R$ '+ind.comissao.toFixed(2):''}</div>
+      </div>`).join('');
+  }
+  // Bônus
+  const bonusUsados=parseInt(document.getElementById('bonusUsados')?.value||0);
+  const bonusRestantes=Math.max(0,5-bonusUsados);
+  const economiaBonus=bonusUsados*86.90; // média PJ
+  let totalPago=0,totalPendente=0,pagos=0,pendentes=0;
+  ativos.forEach(r=>{ const tipo=(r.tipoCertificado||'outros').trim(); const val=precos[tipo]||precos['outros']||150; if(r.situacaoPagamento==='pago'){totalPago+=val;pagos++;} else if(r.situacaoPagamento==='pendente'||r.situacaoPagamento==='parcial'||r.situacaoPagamento==='nao-informado'){totalPendente+=val;pendentes++;} });
+  document.getElementById('rTotalRecebido').textContent=fmtMoney(totalPago);
+  document.getElementById('rAReceber').textContent=fmtMoney(totalPendente);
+  document.getElementById('rPagos').textContent=pagos;
+  document.getElementById('rPendentes').textContent=pendentes;
+  document.getElementById('rTicket').textContent=fmtMoney(pagos>0?totalPago/pagos:0);
+  // Potencial 30d
+  const ativos30=allData.filter(r=>r.statusContato!=='inativo');
+  const pot30=ativos30.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>=0&&d<=30;}).reduce((acc,r)=>{const tipo=(r.tipoCertificado||'outros').trim();return acc+(r.valorCobrado||precos[tipo]||precos['outros']||150);},0);
+  const rPot=document.getElementById('rPotencial');if(rPot)rPot.textContent=fmtMoney(pot30);
+  const rBonus=document.getElementById('rBonus');if(rBonus)rBonus.textContent=bonusRestantes;
+  const rBonusSub=document.getElementById('rBonusSub');if(rBonusSub)rBonusSub.textContent='economia: '+fmtMoney(economiaBonus);
+  // Table
+  const tbody=document.getElementById('receitaBody');
+  if(!ativos.length){tbody.innerHTML='<tr><td colspan="6" class="empty"><div class="empty-icon">💰</div>Sem dados</td></tr>';return;}
+  tbody.innerHTML=ativos.filter(r=>getStatus(r.dataVencimento).key!=='semdata').map(r=>{
+    const tipo=(r.tipoCertificado||'outros').trim(); const val=precos[tipo]||precos['outros']||150;
+    const pg=pgMap[r.situacaoPagamento||'nao-informado']||pgMap['nao-informado'];
+    const st=getStatus(r.dataVencimento);
+    return `<tr><td><strong>${r.razaoSocial}</strong></td><td>${r.tipoCertificado||'-'}</td><td><span class="badge ${pg.cls}">${pg.label}</span></td><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">${fmtMoney(val)}</td><td>${fmtDate(r.dataVencimento)}</td><td><span class="badge ${st.cls}">${st.label}</span></td></tr>`;
+  }).join('');
+}
+function renderReceita(){ renderPrecoInputs(); calcularReceita(); }
+
+// ============================================================
+// IMPORTAR EXCEL
+// ============================================================
+document.getElementById('fileInput').addEventListener('change',function(e){ if(e.target.files[0]) loadExcel(e.target.files[0]); });
+document.getElementById('fileTel').addEventListener('change',function(e){ if(e.target.files[0]) loadTelefones(e.target.files[0]); });
+function loadExcel(file){
+  notify('Carregando '+file.name+'...','info');
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:'',blankrows:false});
+      if(!rows.length){notify('Nenhum dado encontrado','error');return;}
+      const cvDate=v=>{if(!v)return'';if(v instanceof Date)return v.toISOString().split('T')[0];if(typeof v==='string'&&v.includes('/')){const p=v.split('/');if(p.length===3)return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}return v;};
+      const existMap={};allData.forEach(r=>{const k=(r.cnpj||'').replace(/[^\d]/g,'');if(k)existMap[k]=r;});
+      let novos=0,atualiz=0;
+      const newData=rows.map(row=>{
+        const cnpj=(row['CNPJ']||row['cnpj']||'').toString().trim();
+        const k=cnpj.replace(/[^\d]/g,'');
+        const ex=existMap[k];
+        const _sc=(row['Status Contato']||row['statusContato']||'').toString().trim().toLowerCase();
+        const _sit=(row['Situação']||row['Situacao']||row['situacao']||'Ativo').toString().trim().toLowerCase();
+        const _inativo=_sit==='inativo'||_sit==='inativo/baixado'||_sc==='inativo'||_sc==='inativo/baixado';
+        const _sitFinal=_inativo?'Inativo':'Ativo';
+        const _scFinal=_inativo?'inativo':(_sc||'nao-contatado');
+        const base={ razaoSocial:(row['Razão Social']||row['razaoSocial']||'').toString().trim(), cnpj, situacao:_sitFinal, nomeFantasia:(row['Nome Fantasia']||'').toString().trim(), tipoCertificado:(row['Tipo de Certificado']||row['Tipo Certificado']||'').toString().trim(), dataVencimento:cvDate(row['Data de Vencimento']||row['Data Vencimento']||row['dataVencimento']), indicador:(row['Indicador']||'Próprio').toString().trim(), nomeSocioCPF:(row['Nome Sócio CPF']||'').toString().trim(), cpfSocio:(row['CPF Sócio']||'').toString().trim(), dataVencimentoCPF:cvDate(row['Vencimento CPF Sócio']||''), valorVenda:parseFloat((row['Valor Venda']||row['Valor de Venda']||0))||0, custoCertificadora:parseFloat((row['Custo Certificadora']||0))||0 };
+        if(ex){ atualiz++; return {...ex,...base,situacao:_sitFinal,statusContato:_inativo?'inativo':(ex.statusContato||'nao-contatado'),whatsapp:ex.whatsapp||(row['WhatsApp']||'').toString().trim(),nomeContato:ex.nomeContato||(row['Nome do Contato']||'').toString().trim(),historico:ex.historico||[]}; }
+        else { novos++; return {...base,dataEntrada:new Date().toISOString().split('T')[0],nomeContato:(row['Nome do Contato']||'').toString().trim(),whatsapp:(row['WhatsApp']||'').toString().trim(),email:(row['E-mail']||'').toString().trim(),statusContato:_scFinal,tipoCertificadoPF_PJ:(row['Tipo PF/PJ']||'pj').toString().trim().toLowerCase(),situacaoPagamento:'nao-informado',observacoes:(row['Observações']||'').toString().trim(),responsavel:(row['Responsável']||'').toString().trim(),socioResponsavel:(row['Sócio Responsável']||'').toString().trim(),historico:[]}; }
+      }).filter(r=>r.razaoSocial&&r.cnpj);
+      allData=newData; save(); currentFilter='todos'; currentFilterC='todos';
+      document.querySelector('[data-f="todos"]').click(); document.querySelector('[data-fc="todos"]').click();
+      renderTable(); renderHorariosGrid();
+      notify(`✅ ${atualiz} atualizados, ${novos} novos importados!`);
+    }catch(e){notify('Erro ao ler arquivo: '+e.message,'error');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function loadTelefones(file){
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      const map={};
+      rows.forEach(r=>{ const cnpj=(r['CNPJ / CEI']||r['CNPJ']||r['cnpj']||'').toString().replace(/[^\d]/g,''); const tel=(r['CONTATOS']||r['Telefone']||r['WhatsApp']||'').toString().trim(); if(cnpj.length>=11&&tel) map[cnpj]=normFone(tel); });
+      let n=0;
+      allData.forEach((r,i)=>{ const k=(r.cnpj||'').replace(/[^\d]/g,''); if(map[k]){allData[i].whatsapp=map[k];n++;} });
+      save(); renderTable(); notify(`${n} telefones atualizados!`);
+    }catch(e){notify('Erro ao ler arquivo','error');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function normFone(t){ let n=t.replace(/[^\d]/g,''); if(n.startsWith('55')&&n.length>=12)return n; if(n.length===11||n.length===10)return'55'+n; if(n.length<=9)return'5511'+n; return'55'+n; }
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportExcel(){
+  if(!allData.length){notify('Nenhum dado para exportar','error');return;}
+  const data=allData.map(r=>({'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'Nome Fantasia':r.nomeFantasia,'Tipo Certificado':r.tipoCertificado,'Tipo PF/PJ':r.tipoCertificadoPF_PJ,'Nome Contato':r.nomeContato,'WhatsApp':r.whatsapp,'E-mail':r.email,'Data Vencimento':r.dataVencimento,'Status Contato':scMap[r.statusContato||'nao-contatado']?.label||'Não Contatado','Situação Pagamento':pgMap[r.situacaoPagamento||'nao-informado']?.label||'','Valor Cobrado':r.valorCobrado||0,'Data Agendamento':r.dataAgendamento,'Hora Agendamento':r.horaAgendamento,'Observações':r.observacoes,'Sócio Responsável':r.socioResponsavel}));
+  const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Certificados');
+  XLSX.writeFile(wb,`certificados_${new Date().toISOString().split('T')[0]}.xlsx`);
+  // Backup automático silencioso
+  const now=new Date().toLocaleString('pt-BR');
+  localStorage.setItem('lastBackup',now);
+  atualizarInfoBackup();
+  markSaved(); notify('Exportado com sucesso! Backup automático registrado. ✅');
+}
+
+// ============================================================
+// RELATÓRIOS
+// ============================================================
+function openRelatorios(){ openModal('relModal'); }
+function gerarRel(tipo){
+  if(!allData.length){notify('Sem dados','error');return;}
+  const hoje=new Date().toISOString().split('T')[0];
+  const fmt=r=>({'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'WhatsApp':r.whatsapp,'Nome Contato':r.nomeContato,'Vencimento':fmtDate(r.dataVencimento),'Dias p/ Vencer':getDias(r.dataVencimento)??'','Status Cert.':getStatus(r.dataVencimento).label,'Status Contato':scMap[r.statusContato||'nao-contatado']?.label,'Pagamento':pgMap[r.situacaoPagamento||'nao-informado']?.label,'Observações':r.observacoes});
+  const map={
+    'vencidos':['Vencidos',allData.filter(r=>!chkInativo(r)&&getDias(r.dataVencimento)!==null&&getDias(r.dataVencimento)<0)],
+    'urgentes':['Urgentes',allData.filter(r=>{ const d=getDias(r.dataVencimento);return r.statusContato!=='inativo'&&d!==null&&d>=0&&d<=15;})],
+    'atencao':['Atencao',allData.filter(r=>{ const d=getDias(r.dataVencimento);return r.statusContato!=='inativo'&&d!==null&&d>15&&d<=45;})],
+    'sem-tel':['Sem_Telefone',allData.filter(r=>!r.whatsapp)],
+    'nao-contatados':['Nao_Contatados',allData.filter(r=>r.statusContato!=='inativo'&&(r.statusContato||'nao-contatado')==='nao-contatado')],
+    'todos':['Completo',allData],
+    'financeiro':['Financeiro',allData.filter(r=>r.statusContato!=='inativo').map(r=>({...fmt(r),'Tipo Cert.':r.tipoCertificado,'Valor Est.':fmtMoney(precos[(r.tipoCertificado||'outros').trim()]||precos['outros']||150)}))],
+    'agendados':['Agendados',allData.filter(r=>r.dataAgendamento&&r.statusContato==='agendado').map(r=>({...fmt(r),'Data Agend.':fmtDate(r.dataAgendamento),'Hora':r.horaAgendamento||''}))]
+  };
+  const [name,data]=map[tipo]||['Relatorio',allData];
+  if(!data.length){notify('Nenhum registro para este relatório','error');return;}
+  const exportData=data.map(r=>fmt(r));
+  const ws=XLSX.utils.json_to_sheet(exportData);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Relatório');
+  XLSX.writeFile(wb,`rel_${name}_${hoje}.xlsx`);
+  closeModal('relModal'); notify(`Relatório exportado! ${data.length} registros.`);
+}
+
+// ============================================================
+// STORAGE
+// ============================================================
+function save(){ localStorage.setItem('certDataV30',JSON.stringify(allData)); markSaved(); }
+function clearData(){ if(confirm('Limpar todos os dados?')){ allData=[]; save(); renderTable(); renderHorariosGrid(); notify('Dados limpos!'); } }
+
+// ============================================================
+// MIGRAÇÃO DO V23
+// ============================================================
+document.getElementById('fileMig').addEventListener('change',function(e){ if(e.target.files[0]) migrarV23(e.target.files[0]); });
+function migrarV23(file){
+  const st=document.getElementById('migStatus');
+  st.style.display='block'; st.style.color='var(--accent)'; st.textContent='⏳ Lendo arquivo do V23...';
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:'',blankrows:false});
+      if(!rows.length){ st.style.color='var(--red)'; st.textContent='❌ Nenhum dado encontrado no arquivo.'; return; }
+      const cvDate=v=>{if(!v)return'';if(v instanceof Date)return v.toISOString().split('T')[0];if(typeof v==='string'&&v.includes('/')){const p=v.split('/');if(p.length===3)return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}return v.toString();};
+      const scRemap={'inativo':'inativo','inativo/baixado':'inativo','não contatado':'nao-contatado','nao contatado':'nao-contatado','contatado':'contatado','respondeu':'respondeu','agendado':'agendado','renovando':'renovando','concluído':'concluido','concluido':'concluido'};
+      const pgRemap={'não informado':'nao-informado','nao-informado':'nao-informado','pago':'pago','pendente':'pendente','parcial':'parcial'};
+      let novos=0,atualizados=0;
+      const existMap={};allData.forEach(r=>{const k=(r.cnpj||'').replace(/[^\d]/g,'');if(k)existMap[k]=r;});
+      const importados=rows.map(row=>{
+        const cnpj=(row['CNPJ']||row['cnpj']||'').toString().trim();
+        const k=cnpj.replace(/[^\d]/g,'');
+        const ex=existMap[k];
+        const scRaw=(row['Status Contato']||row['statusContato']||'').toString().trim().toLowerCase();
+        const pgRaw=(row['Situacao Pagamento']||row['situacaoPagamento']||row['Situação Pagamento']||'').toString().trim().toLowerCase();
+        const sitRaw=(row['Situação']||row['Situacao']||row['situacao']||'Ativo').toString().trim().toLowerCase();
+        const isInativoImport = sitRaw==='inativo'||sitRaw==='inativo/baixado'||scRaw==='inativo'||scRaw==='inativo/baixado';
+        const sc = isInativoImport ? 'inativo' : (scRemap[scRaw]||'nao-contatado');
+        const pg=pgRemap[pgRaw]||'nao-informado';
+        const sitFinal = isInativoImport ? 'Inativo' : 'Ativo';
+        const base={
+          razaoSocial:(row['Razão Social']||row['razaoSocial']||'').toString().trim(),
+          cnpj, nomeFantasia:(row['Nome Fantasia']||row['nomeFantasia']||'').toString().trim(),
+          tipoCertificado:(row['Tipo de Certificado']||row['tipoCertificado']||'').toString().trim(),
+          dataVencimento:cvDate(row['Data de Vencimento']||row['dataVencimento']),
+          nomeContato:(row['Nome do Contato']||row['nomeContato']||'').toString().trim(),
+          whatsapp:(row['WhatsApp']||row['whatsapp']||'').toString().trim(),
+          email:(row['E-mail']||row['email']||'').toString().trim(),
+          socioResponsavel:(row['Sócio Responsável']||row['socioResponsavel']||'').toString().trim(),
+          observacoes:(row['Observações']||row['observacoes']||'').toString().trim(),
+          responsavel:(row['Responsável']||row['responsavel']||'').toString().trim(),
+          dataAgendamento:cvDate(row['Data Agendamento']||row['dataAgendamento']),
+          horaAgendamento:(row['Hora Agendamento']||row['horaAgendamento']||'').toString().trim(),
+          tipoCertificadoPF_PJ:(row['Tipo PF/PJ']||row['tipoCertificadoPF_PJ']||'pj').toString().trim().toLowerCase(),
+        };
+        if(ex){ atualizados++; return {...ex,...base,statusContato:sc==='nao-contatado'?(ex.statusContato||'nao-contatado'):sc,situacaoPagamento:ex.situacaoPagamento||pg,historico:ex.historico||[]}; }
+        else { novos++; return {...base,dataEntrada:new Date().toISOString().split('T')[0],statusContato:sc,situacaoPagamento:pg,historico:[],valorCobrado:0}; }
+      }).filter(r=>r.razaoSocial&&r.cnpj);
+      allData=importados; save(); renderTable(); renderHorariosGrid();
+      st.style.color='var(--green)';
+      st.innerHTML=`✅ Migração concluída! <strong>${atualizados}</strong> clientes atualizados e <strong>${novos}</strong> novos importados. Total: <strong>${allData.length}</strong> registros.`;
+      notify(`Migração concluída! ${allData.length} registros.`);
+    }catch(e){ st.style.color='var(--red)'; st.textContent='❌ Erro ao ler arquivo: '+e.message; }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ============================================================
+// ONBOARDING
+// ============================================================
+let obCurrentStep=1;
+let obTipo='pj'; let obPg='nao-informado';
+function goObStep(n){
+  if(n>obCurrentStep) return; // só avança via botão
+  obCurrentStep=n; renderObStep();
+}
+function renderObStep(){
+  for(let i=1;i<=4;i++){
+    const pg=document.getElementById(`ob-page-${i}`); if(pg) pg.style.display=i===obCurrentStep?'block':'none';
+    const st=document.getElementById(`ob-step-${i}`); if(st){ st.classList.remove('active','done'); if(i===obCurrentStep)st.classList.add('active'); else if(i<obCurrentStep)st.classList.add('done'); }
+  }
+  document.getElementById('ob-btn-back').style.display=obCurrentStep>1?'':'none';
+  document.getElementById('ob-btn-next').textContent=obCurrentStep===4?'✅ Cadastrar Cliente':'Próximo →';
+  if(obCurrentStep===4) buildObResumo();
+}
+function obNext(){
+  if(obCurrentStep===1){
+    if(!document.getElementById('ob-razao').value.trim()||!document.getElementById('ob-cnpj').value.trim()){ notify('Preencha Razão Social e CNPJ','error');return;}
+  }
+  if(obCurrentStep===2){
+    if(!document.getElementById('ob-venc').value){ notify('Informe a data de vencimento','error');return;}
+  }
+  if(obCurrentStep===4){ salvarOnboarding();return; }
+  obCurrentStep++; renderObStep();
+}
+function obBack(){ if(obCurrentStep>1){ obCurrentStep--; renderObStep(); } }
+function selObTipo(t,el){ obTipo=t; document.querySelectorAll('[data-obtp]').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); document.getElementById('ob-tipo').value=t; }
+function selObPg(p,el){ obPg=p; document.querySelectorAll('[data-obpg]').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); document.getElementById('ob-pg').value=p; }
+function buildObResumo(){
+  const docs=[]; if(document.getElementById('doc-cnh')?.checked)docs.push('CNH'); if(document.getElementById('doc-cep')?.checked)docs.push('CEP'); if(document.getElementById('doc-email')?.checked)docs.push('E-mail'); if(document.getElementById('doc-tel')?.checked)docs.push('Telefone');
+  document.getElementById('ob-resumo').innerHTML=`
+    <div><strong style="color:var(--text2)">Empresa:</strong> ${document.getElementById('ob-razao').value}</div>
+    <div><strong style="color:var(--text2)">CNPJ:</strong> ${document.getElementById('ob-cnpj').value}</div>
+    <div><strong style="color:var(--text2)">Contato:</strong> ${document.getElementById('ob-contato').value||'-'} · ${document.getElementById('ob-wa').value||'-'}</div>
+    <div><strong style="color:var(--text2)">Certificado:</strong> ${document.getElementById('ob-tipo-cert').value||'-'} (${obTipo.toUpperCase()})</div>
+    <div><strong style="color:var(--text2)">Vencimento:</strong> ${fmtDate(document.getElementById('ob-venc').value)}</div>
+    <div><strong style="color:var(--text2)">Valor:</strong> ${fmtMoney(document.getElementById('ob-valor').value||0)}</div>
+    <div><strong style="color:var(--text2)">Pagamento:</strong> ${pgMap[obPg]?.label}</div>
+    <div><strong style="color:var(--text2)">Docs recebidos:</strong> ${docs.length?docs.join(', '):'Nenhum'}</div>`;
+}
+function salvarOnboarding(){
+  const row={
+    razaoSocial:document.getElementById('ob-razao').value.trim(),
+    cnpj:document.getElementById('ob-cnpj').value.trim(),
+    nomeFantasia:document.getElementById('ob-fantasia').value,
+    nomeContato:document.getElementById('ob-contato').value,
+    whatsapp:document.getElementById('ob-wa').value,
+    email:document.getElementById('ob-email').value,
+    socioResponsavel:document.getElementById('ob-socio').value,
+    tipoCertificado:document.getElementById('ob-tipo-cert').value,
+    tipoCertificadoPF_PJ:obTipo,
+    dataVencimento:document.getElementById('ob-venc').value,
+    valorCobrado:parseFloat(document.getElementById('ob-valor').value)||0,
+    situacaoPagamento:obPg,
+    observacoes:document.getElementById('ob-obs').value,
+    statusContato:'nao-contatado',
+    dataEntrada:new Date().toISOString().split('T')[0],
+    historico:[{icon:'🎯',title:'Cliente cadastrado via Onboarding',date:new Date().toLocaleDateString('pt-BR'),author:'Tatiane'}]
+  };
+  allData.push(row); save(); renderTable();
+  closeModal('onboardModal');
+  notify('Cliente cadastrado com sucesso! 🎉');
+  // Reset
+  obCurrentStep=1; obTipo='pj'; obPg='nao-informado';
+  ['ob-cnpj','ob-razao','ob-fantasia','ob-socio','ob-contato','ob-wa','ob-email','ob-endereco','ob-venc','ob-valor','ob-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+}
+let obCnpjTimer=null;
+function onObCnpj(el){
+  if(obCnpjTimer) clearTimeout(obCnpjTimer);
+  let v=el.value.replace(/[^\d]/g,'').slice(0,14);
+  if(v.length>12)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');
+  else if(v.length>8)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d+)/,'$1.$2.$3/$4');
+  else if(v.length>5)v=v.replace(/(\d{2})(\d{3})(\d+)/,'$1.$2.$3');
+  else if(v.length>2)v=v.replace(/(\d{2})(\d+)/,'$1.$2');
+  el.value=v;
+  if(v.replace(/[^\d]/g,'').length===14) obCnpjTimer=setTimeout(buscarObCnpj,600);
+}
+async function buscarObCnpj(){
+  const cnpj=document.getElementById('ob-cnpj').value.replace(/[^\d]/g,'');
+  if(cnpj.length!==14) return;
+  const hint=document.getElementById('ob-cnpj-hint');
+  hint.innerHTML='<span style="color:var(--accent)">⏳ Buscando...</span>';
+  try{
+    let data,ok=false;
+    let r=await fetch(`https://publica.cnpj.ws/cnpj/${cnpj}`);
+    if(r.ok){data=await r.json();ok=true;}
+    else{r=await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);if(r.ok){data=await r.json();ok=true;}}
+    if(ok&&data){
+      document.getElementById('ob-razao').value=data.razao_social||data.nome||'';
+      document.getElementById('ob-fantasia').value=data.estabelecimento?.nome_fantasia||data.nome_fantasia||'';
+      const socios=data.socios||data.qsa||[];
+      if(socios.length>0)document.getElementById('ob-socio').value=socios[0].nome||socios[0].nome_socio||'';
+      hint.innerHTML='<span style="color:var(--green)">✅ Dados carregados!</span>';
+    } else hint.innerHTML='<span style="color:var(--orange)">⚠️ Não encontrado</span>';
+  }catch{hint.innerHTML='<span style="color:var(--orange)">⚠️ Erro ao buscar</span>';}
+}
+
+// ============================================================
+// EXPORT RECEITA
+// ============================================================
+function exportReceitaExcel(){
+  if(!allData.length){notify('Sem dados','error');return;}
+  const ativos=allData.filter(r=>r.statusContato!=='inativo');
+  const data=ativos.map(r=>{const tipo=(r.tipoCertificado||'outros').trim();const val=r.valorCobrado||precos[tipo]||precos['outros']||150;return{'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'Tipo Cert.':r.tipoCertificado,'PF/PJ':r.tipoCertificadoPF_PJ,'Pgto':pgMap[r.situacaoPagamento||'nao-informado']?.label,'Valor (R$)':val,'Vencimento':fmtDate(r.dataVencimento),'Status':getStatus(r.dataVencimento).label,'Responsável':r.responsavel||''};});
+  const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Receita');
+  XLSX.writeFile(wb,`receita_tg_${new Date().toISOString().split('T')[0]}.xlsx`);
+  notify('Relatório financeiro exportado!');
+}
+
+// ============================================================
+// BACKUP & RESTAURAÇÃO
+// ============================================================
+function openLogDisparosModal(){
+  const logs=JSON.parse(localStorage.getItem('disparoLogs')||'[]');
+  const body=document.getElementById('logDisparosBody');
+  if(!logs.length){
+    body.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:30px;">Nenhum disparo realizado ainda.</div>';
+    return;
+  }
+  body.innerHTML=logs.map((log,i)=>`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:12.5px;font-weight:700;">${log.data}</div>
+        <div style="display:flex;gap:8px;">
+          <span style="font-size:11px;color:var(--green);font-weight:700;">✅ ${log.env} enviados</span>
+          ${log.err>0?`<span style="font-size:11px;color:var(--red);font-weight:700;">❌ ${log.err} erros</span>`:''}
+        </div>
+      </div>
+      <div class="log-wrap">
+        ${log.itens.map(l=>`
+          <div class="log-item ${l.status}">
+            <span class="log-icon">${l.status==='ok'?'✅':'❌'}</span>
+            <div class="log-info">
+              <div class="log-nome">${l.nome}</div>
+              <div class="log-meta">${l.whatsapp} · ${l.tmpl}${l.erroMsg?` · <span style="color:var(--red)">${l.erroMsg}</span>`:''}</div>
+            </div>
+            <div class="log-hora">${l.horaFim||l.hora}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+  openModal('logDisparosModal');
+}
+
+function limparHistoricoDisparos(){
+  if(confirm('Limpar todo o histórico de disparos?')){
+    localStorage.removeItem('disparoLogs');
+    document.getElementById('logDisparosBody').innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:30px;">Histórico limpo!</div>';
+    notify('Histórico limpo!');
+  }
+}
+
+function fazerBackup(){
+  const backup={ versao:'v24', data:new Date().toISOString(), certificados:allData, horarios:horariosDisp, precos };
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download=`backup_tg_certificados_${new Date().toISOString().split('T')[0]}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  const now=new Date().toLocaleString('pt-BR');
+  localStorage.setItem('lastBackup',now);
+  document.getElementById('lastBackupInfo').textContent='Último backup manual: '+now;
+  notify('Backup salvo com sucesso! 💾');
+}
+document.getElementById('fileRestore').addEventListener('change',function(e){
+  if(!e.target.files[0]) return;
+  if(!confirm('Restaurar backup? Os dados atuais serão substituídos.')) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const backup=JSON.parse(ev.target.result);
+      if(backup.certificados){ allData=backup.certificados; }
+      if(backup.horarios){ horariosDisp=backup.horarios; localStorage.setItem('horariosDisp',JSON.stringify(horariosDisp)); }
+      if(backup.precos){ precos=backup.precos; localStorage.setItem('precos',JSON.stringify(precos)); }
+      save(); renderTable(); renderHorariosGrid();
+      notify(`Backup restaurado! ${allData.length} registros.`);
+      closeModal('backupModal');
+    }catch{ notify('Arquivo de backup inválido','error'); }
+  };
+  reader.readAsText(e.target.files[0]);
+  e.target.value='';
+});
+function atualizarInfoBackup(){
+  const last=localStorage.getItem('lastBackup');
+  if(last) document.getElementById('lastBackupInfo').textContent='Último backup manual: '+last;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load',function(){
+  // Dados financeiros Maio 2026 — aplicar automaticamente
+  const MAIO_FIN=[
+    {cnpj:'58674636000107',indicador:'Almeida',valorVenda:185,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'27524170807',indicador:'Próprio',valorVenda:155,tipoCertificadoPF_PJ:'pf'},
+    {cnpj:'60398144000170',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'46523227000112',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'46523436000166',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'22685177000101',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'57138834187',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf'},
+    {cnpj:'32330516894',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf'},
+    {cnpj:'33736532000140',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'36627167000124',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'28898450877',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf'},
+    {cnpj:'32275280000137',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'61144585000108',indicador:'Próprio',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'29677372831',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf'},
+    {cnpj:'30478956000164',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'28684528000146',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'14522414000195',indicador:'Próprio',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+    {cnpj:'34053057000170',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj'},
+  ];
+  // Pré-configurar Z-API se ainda não tiver
+  if(!localStorage.getItem('zapiId')) {
+    localStorage.setItem('zapiId','3F092FC0E9EC027428CC0A54F45FEA1D');
+    localStorage.setItem('zapiToken','7E3494BDD509BE50C2519578');
+    localStorage.setItem('zapiCt','Fc77b6eef27e04c86928acba2238d90d0S');
+  }
+  // Forçar atualização do client-token se já existir
+  localStorage.setItem('zapiCt','Fc77b6eef27e04c86928acba2238d90d0S');
+  loadZapi();
+  const saved=localStorage.getItem('certDataV30')||localStorage.getItem('certDataV29')||localStorage.getItem('certDataV28')||localStorage.getItem('certDataV27')||localStorage.getItem('certDataV26')||localStorage.getItem('certDataV25')||localStorage.getItem('certData');
+  if(saved){ try{allData=JSON.parse(saved);}catch{} }
+  const savedH=localStorage.getItem('horariosDisp');
+  if(savedH){ try{horariosDisp=JSON.parse(savedH);}catch{} }
+  const savedP=localStorage.getItem('precos');
+  if(savedP){ try{precos=JSON.parse(savedP);}catch{} }
+  // Aplicar Almeida como indicador padrão para todos sem indicador
+  const PROPRIOS_CNPJ = ['14522414000195','61144585000108','27524170807'];
+  allData.forEach((r,i) => {
+    const cnpjC = (r.cnpj||'').replace(/[^0-9]/g,'');
+    if(!r.indicador || r.indicador === '') {
+      allData[i].indicador = PROPRIOS_CNPJ.includes(cnpjC) ? 'Próprio' : 'Almeida';
+    }
+  });
+  // Aplicar dados de maio
+  const MAIO_H=[
+    {cnpj:'58674636000107',indicador:'Almeida',valorVenda:185,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-15'},
+    {cnpj:'27524170807',indicador:'Próprio',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-14'},
+    {cnpj:'60398144000170',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-14'},
+    {cnpj:'46523227000112',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-14'},
+    {cnpj:'46523436000166',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-14'},
+    {cnpj:'22685177000101',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-14'},
+    {cnpj:'57138834187',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-14'},
+    {cnpj:'32330516894',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-13'},
+    {cnpj:'33736532000140',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-13'},
+    {cnpj:'36627167000124',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-13'},
+    {cnpj:'28898450877',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-12'},
+    {cnpj:'32275280000137',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-12'},
+    {cnpj:'61144585000108',indicador:'Próprio',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-12'},
+    {cnpj:'29677372831',indicador:'Almeida',valorVenda:155,tipoCertificadoPF_PJ:'pf',dataVencimento:'2027-05-12'},
+    {cnpj:'30478956000164',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-12'},
+    {cnpj:'28684528000146',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-11'},
+    {cnpj:'14522414000195',indicador:'Próprio',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-06'},
+    {cnpj:'34053057000170',indicador:'Almeida',valorVenda:230,tipoCertificadoPF_PJ:'pj',dataVencimento:'2027-05-05'},
+  ];
+  MAIO_H.forEach(fin=>{
+    const idx=allData.findIndex(r=>(r.cnpj||'').replace(/[^0-9]/g,'')===fin.cnpj);
+    if(idx>=0){
+      allData[idx].indicador=fin.indicador;
+      allData[idx].valorVenda=fin.valorVenda;
+      allData[idx].tipoCertificadoPF_PJ=fin.tipoCertificadoPF_PJ;
+      allData[idx].dataVencimento=fin.dataVencimento;
+    }
+  });
+  save();
+  renderTable(); renderHorariosGrid(); renderDashboard(); atualizarInfoBackup();
+  document.getElementById('dashDate').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  // Se não há dados, sugerir migração
+  if(!allData.length){ setTimeout(()=>notify('💡 Use "Migrar V23/V24" na sidebar para importar seus dados!','info'),1500); }
+});
+</script>
+</body>
+</html>
