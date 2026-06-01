@@ -1724,12 +1724,29 @@ function copiarMsgPreview() {
 function enviarWa() {
   const row = allData[msgIdx];
   if(!row.whatsapp){ notify('WhatsApp não informado','error'); return; }
-  const msg = gerarMsg(document.getElementById('msgTemplate').value, row);
+  const tmpl = document.getElementById('msgTemplate').value;
+  const msg = gerarMsg(tmpl, row);
   window.open(`https://wa.me/${row.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank');
-  // Registrar no histórico
+  // Atualizar status para Contatado
+  allData[msgIdx].statusContato = 'contatado';
+  // Registrar data do contato
+  allData[msgIdx].dataUltimoContato = new Date().toISOString().split('T')[0];
+  // Registrar no histórico com detalhes completos
   if(!allData[msgIdx].historico) allData[msgIdx].historico=[];
-  allData[msgIdx].historico.push({ icon:'📱', title:'Mensagem enviada via WhatsApp', note:`Template: ${document.getElementById('msgTemplate').value}`, date:new Date().toLocaleDateString('pt-BR'), author:'Tatiane' });
-  save(); closeModal('msgModal'); notify('WhatsApp aberto com a mensagem!');
+  const tmplNomes = {'primeiro-contato':'🤝 Primeiro Contato','lembrete':'👋 Lembrete','urgente':'⚠️ Urgente','documentos':'📄 Documentos','agradecimento':'🙏 Agradecimento'};
+  const agora = new Date();
+  allData[msgIdx].historico.push({
+    icon: '📱',
+    title: 'Mensagem enviada via WhatsApp',
+    note: `Template: ${tmplNomes[tmpl]||tmpl} | Número: ${row.whatsapp}`,
+    date: agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    author: 'Tatiane'
+  });
+  save();
+  renderTable();
+  renderDashboard();
+  closeModal('msgModal');
+  notify('✅ WhatsApp aberto! Cliente marcado como Contatado.');
 }
 
 // ============================================================
