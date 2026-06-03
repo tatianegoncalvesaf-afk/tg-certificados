@@ -466,6 +466,7 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
       <div class="stat-card emdia"><div class="stat-label">Em Dia</div><div class="stat-value" id="sEmdia">0</div></div>
       <div class="stat-card inativo"><div class="stat-label">Inativos</div><div class="stat-value" id="sInativo">0</div></div>
       <div class="stat-card urgente" style="--orange:#ff6b9d"><div class="stat-label" style="color:rgba(255,107,157,0.8)">Sem Contato</div><div class="stat-value" id="sSemContato" style="color:#ff6b9d">0</div><div class="stat-sub">pendentes de ação</div></div>
+      <div class="stat-card c-emdia"><div class="stat-glow"></div><div class="stat-label">♻️ Reativados</div><div class="stat-value" id="sReativados" style="color:var(--teal)">0</div><div class="stat-sub">próprios reativados</div></div>
       <div class="stat-card receita"><div class="stat-label">Receita Estimada</div><div class="stat-value" id="sReceita">R$ 0</div><div class="stat-sub">Certificados a renovar</div></div>
     </div>
     <!-- Financeiro -->
@@ -522,6 +523,7 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
       <label class="btn btn-ghost" style="cursor:pointer;">📥 Importar<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" /></label>
       <label class="btn btn-ghost" style="cursor:pointer;">📱 Telefones<input type="file" id="fileTel" accept=".xlsx,.xls" style="display:none" /></label>
       <button class="btn btn-ghost" onclick="openRelatorios()">📊 Relatórios</button>
+      <button class="btn btn-ghost" onclick="exportarReativados()" style="color:var(--teal);border-color:rgba(0,201,212,0.3);">♻️ Reativados</button>
       <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar</button>
     </div>
     <div class="filters-bar">
@@ -1211,7 +1213,7 @@ function renderTable() {
       <td>${sitBadge}</td>
       <td><strong style="font-size:13px;cursor:pointer;color:var(--accent)" onclick="openEdit(${oi})" title="Clique para editar">${row.razaoSocial||'-'}</strong>${row.nomeFantasia?`<div style="font-size:11px;color:var(--text3)">${row.nomeFantasia}</div>`:''}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${row.cnpj||'-'}</td>
-      <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;background:${row.indicador&&row.indicador!=='Próprio'?'rgba(176,125,255,0.12)':'rgba(61,80,112,0.15)'};color:${row.indicador&&row.indicador!=='Próprio'?'var(--purple)':'var(--text3)'}">${row.indicador||'Próprio'}</span></td>
+      <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;background:${(row.indicador||'').includes('Reativado')?'rgba(0,201,212,0.12)':row.indicador&&row.indicador!=='Próprio'?'rgba(176,125,255,0.12)':'rgba(61,80,112,0.15)'};color:${(row.indicador||'').includes('Reativado')?'var(--teal)':row.indicador&&row.indicador!=='Próprio'?'var(--purple)':'var(--text3)'}">${row.indicador||'Próprio'}</span></td>
       <td>${tipoLabel}</td>
       <td>${fmtDate(row.dataVencimento)}</td>
       <td><strong style="color:${dias<0?'var(--red)':dias<=15?'var(--orange)':dias<=45?'var(--yellow)':'var(--green)'}">${dias!==null?dias+'d':'-'}</strong></td>
