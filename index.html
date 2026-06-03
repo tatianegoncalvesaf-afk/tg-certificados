@@ -2225,6 +2225,8 @@ function gerarMsg(tmpl, row) {
     msg = msg.replace(', somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais','');
   }
   msg = msg.replace(/Vence em:/g,dvLabel+':');
+  // Converter \n literal para quebra de linha real
+  msg = msg.replace(/\\n/g,'\n');
   return msg;
 }
 function openMsg(i) {
