@@ -1009,7 +1009,6 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
     <button class="modal-close" onclick="closeModal('agendamentoModal')">✕</button>
   </div>
   <div class="modal-body">
-    <!-- Novo agendamento -->
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:16px;">
       <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">➕ Novo Agendamento</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -1034,11 +1033,11 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
           </select>
         </div>
         <div>
-          <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">🎯 Filtro de Clientes</label>
+          <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">🎯 Filtro</label>
           <select id="agendaFiltro" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;">
             <option value="vencidos">🔴 Vencidos</option>
-            <option value="urgentes">🟠 Urgentes (≤15d)</option>
-            <option value="atencao">🟡 Atenção (≤45d)</option>
+            <option value="urgentes">🟠 Urgentes</option>
+            <option value="atencao">🟡 Atenção</option>
             <option value="todos">📋 Todos pendentes</option>
           </select>
         </div>
@@ -1047,13 +1046,29 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
         <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">📝 Descrição (opcional)</label>
         <input type="text" id="agendaDesc" placeholder="Ex: Disparo semanal vencidos..." style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;"/>
       </div>
+
+      <!-- Seleção de clientes -->
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="font-size:10.5px;color:var(--text3);font-weight:700;">👥 Clientes</label>
+          <div style="display:flex;gap:5px;">
+            <button class="btn btn-ghost btn-sm" onclick="carregarClientesAgenda()" style="font-size:10px;">🔄 Carregar</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleTodosAgenda(true)" style="font-size:10px;">✅ Todos</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleTodosAgenda(false)" style="font-size:10px;">⬜ Nenhum</button>
+          </div>
+        </div>
+        <div id="agendaClientesWrap" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg2);">
+          <div style="padding:14px;text-align:center;font-size:12px;color:var(--text3);">Clique em "🔄 Carregar" para ver os clientes</div>
+        </div>
+        <div style="font-size:10.5px;color:var(--text3);margin-top:4px;" id="agendaSelCount">0 clientes selecionados</div>
+      </div>
+
       <div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.2);border-radius:8px;margin-bottom:10px;">
-        <span style="font-size:13px;">⚠️</span>
-        <span style="font-size:11px;color:var(--yellow);">O painel precisa estar aberto no horário do disparo para funcionar.</span>
+        <span>⚠️</span>
+        <span style="font-size:11px;color:var(--yellow);">O painel precisa estar aberto no horário do disparo.</span>
       </div>
       <button class="btn btn-green" onclick="criarAgendamento()" style="width:100%;">⏰ Agendar Disparo</button>
     </div>
-    <!-- Lista de agendamentos -->
     <div id="agendaLista">
       <div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Nenhum agendamento criado ainda.</div>
     </div>
