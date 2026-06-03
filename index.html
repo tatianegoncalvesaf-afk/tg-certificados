@@ -289,6 +289,29 @@ tbody tr.inativo-row td{opacity:0.6;}
 .ob-step.active{background:rgba(108,142,245,0.15);color:var(--accent);border-color:rgba(108,142,245,0.3);}
 .ob-step.done{background:rgba(46,204,138,0.12);color:var(--green);border-color:rgba(46,204,138,0.25);}
 
+/* ─── FECHAMENTO FINANCEIRO ─── */
+.fech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:20px;}
+.fech-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;}
+.fech-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.fc-rec::before{background:var(--green);} .fc-cust::before{background:var(--red);} .fc-alm::before{background:var(--purple);} .fc-taty::before{background:var(--accent);} .fc-dgn::before{background:var(--teal);} .fc-bon::before{background:var(--yellow);}
+.fech-label{font-size:9.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.fech-val{font-size:19px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.fc-rec .fech-val{color:var(--green);} .fc-cust .fech-val{color:var(--red);} .fc-alm .fech-val{color:var(--purple);} .fc-taty .fech-val{color:var(--accent);} .fc-dgn .fech-val{color:var(--teal);} .fc-bon .fech-val{color:var(--yellow);}
+.fech-sub{font-size:9.5px;color:var(--text3);margin-top:4px;}
+.fech-table{width:100%;border-collapse:collapse;}
+.fech-table th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);background:var(--bg3);}
+.fech-table td{padding:8px 12px;font-size:11.5px;border-bottom:1px solid rgba(30,45,69,0.4);vertical-align:middle;}
+.fech-table tbody tr:hover{background:rgba(79,142,255,0.04);}
+.quint-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.quint-info{flex:1;}
+.quint-title{font-size:12.5px;font-weight:700;}
+.quint-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.tipo-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid transparent;}
+.tipo-normal{background:rgba(79,142,255,0.12);color:var(--accent);border-color:rgba(79,142,255,0.3);}
+.tipo-bonus-cliente{background:rgba(255,209,102,0.12);color:var(--yellow);border-color:rgba(255,209,102,0.3);}
+.tipo-bonus-custo{background:rgba(0,214,143,0.12);color:var(--green);border-color:rgba(0,214,143,0.3);}
+.tipo-dgn{background:rgba(0,201,212,0.12);color:var(--teal);border-color:rgba(0,201,212,0.3);}
+
 /* RESPONSIVE */
 @media(max-width:900px){
   .sidebar{display:none;}
@@ -359,6 +382,7 @@ tbody tr.inativo-row td{opacity:0.6;}
   <div class="nav-item" onclick="showPage('certificados')" id="nav-certificados"><span class="nav-icon">📋</span>Certificados<span class="nav-badge" id="navBadgeVenc" style="display:none">0</span></div>
   <div class="sidebar-section">Financeiro</div>
   <div class="nav-item" onclick="showPage('receita')" id="nav-receita"><span class="nav-icon">💰</span>Receita & Comissões</div>
+  <div class="nav-item" onclick="showPage('fechamento')" id="nav-fechamento"><span class="nav-icon">📊</span>Fechamento Financeiro</div>
   <div class="sidebar-section">Ferramentas</div>
   <div class="nav-item" onclick="openModal('onboardModal')" id="nav-onboard"><span class="nav-icon">🎯</span>Novo Cliente</div>
   <div class="nav-item" onclick="openModal('migModal')" id="nav-mig"><span class="nav-icon">🔄</span>Migrar V23/V24</div>
@@ -477,6 +501,60 @@ tbody tr.inativo-row td{opacity:0.6;}
       </table>
     </div>
     <div id="tableInfo" style="padding:10px 0;font-size:12px;color:var(--text3);"></div>
+  </div>
+</div>
+
+<!-- FECHAMENTO FINANCEIRO -->
+<div class="page" id="page-fechamento">
+  <div style="padding:24px;">
+    <div class="page-header">
+      <div class="page-title">📊 Fechamento Financeiro</div>
+      <div class="page-sub">Controle de recebimentos, custos e comissões por mês</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+      <select id="fechMes" onchange="renderFechamento()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--text);font-size:12.5px;font-family:inherit;"></select>
+      <button class="btn btn-ghost btn-sm" onclick="renderFechamento()">🔄 Atualizar</button>
+      <button class="btn btn-wa btn-sm" onclick="exportarFechamento()">📥 Exportar Excel</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportarCobrancaDGN()">🏢 Cobrança DGN</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="fech-grid" id="fechKpis"></div>
+
+    <!-- Quinzenas -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">🏭 Pagamento Certificadora — Quinzenal</div>
+      <div id="fechQuinzenas"></div>
+    </div>
+
+    <!-- Filtros + Tabela -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);">📋 Detalhamento por Cliente</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="fechFiltros">
+          <span class="mes-chip active" onclick="filtrarFech('todos',this)">Todos</span>
+          <span class="mes-chip" onclick="filtrarFech('almeida',this)">🤝 Almeida</span>
+          <span class="mes-chip" onclick="filtrarFech('dgn',this)">🏢 DGN/DGM</span>
+          <span class="mes-chip" onclick="filtrarFech('proprio',this)">👤 Próprio</span>
+          <span class="mes-chip" onclick="filtrarFech('bonus',this)">🎁 Bônus</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="fech-table">
+          <thead><tr>
+            <th>Cliente</th><th>PF/PJ</th><th>Indicador</th><th>Tipo Negócio</th>
+            <th>Venda</th><th>Custo</th><th>Comissão</th><th>Lucro Taty</th><th>Pgto</th><th>Ação</th>
+          </tr></thead>
+          <tbody id="fechBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DGN -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">🏢 Cobrança DGN — Vence dia 25</div>
+      <div id="fechDGN"><div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Selecione um mês para ver a cobrança DGN</div></div>
+    </div>
   </div>
 </div>
 
@@ -1235,6 +1313,289 @@ function renderFinanceiro() {
       grid.innerHTML='<div style="font-size:11.5px;color:var(--text3);padding:8px 0">Nenhum dado financeiro encontrado. Importe a base com indicador e valor de venda.</div>';
     }
   }
+}
+
+// ══════════════════════════════════════════
+// FECHAMENTO FINANCEIRO
+// ══════════════════════════════════════════
+
+const CUSTO_PJ = 86.90, CUSTO_PF = 61.04;
+const COM_ALMEIDA_PJ = 89.00, COM_ALMEIDA_PF = 56.00;
+const PRECO_NORMAL_PJ = 230.00, PRECO_NORMAL_PF = 155.00;
+const PRECO_DGN_PJ = 90.00, PRECO_DGN_PF = 80.00;
+
+function calcComissao(r) {
+  const tipo = (r.tipoCertificadoPF_PJ||'pj').toLowerCase();
+  const isPF = tipo.includes('pf') && !tipo.includes('pj');
+  const isPJ = tipo.includes('pj') && !tipo.includes('pf');
+  const isAmbos = tipo.includes('pf') && tipo.includes('pj');
+  const ind = (r.indicador||'Almeida').trim().toLowerCase();
+  const isDGN = ind === 'dgn' || ind === 'dgm';
+  const isProprio = ind === 'próprio' || ind === 'proprio';
+  const tipoNeg = (r.tipoNegocio||'normal').toLowerCase();
+  const venda = parseFloat(r.valorVenda||r.valorCobrado||0);
+
+  let custo = 0, comissao = 0, lucroTaty = 0;
+
+  if(tipoNeg === 'bonus-cliente') {
+    // Bônus para cliente: cliente não paga, custo é seu, almeida não recebe
+    custo = isAmbos ? (CUSTO_PJ+CUSTO_PF) : isPF ? CUSTO_PF : CUSTO_PJ;
+    comissao = 0;
+    lucroTaty = -custo;
+  } else if(tipoNeg === 'bonus-custo') {
+    // Bônus de custo: voucher, sem custo para você
+    custo = 0;
+    const lucro = venda;
+    if(isDGN || isProprio) { comissao = 0; lucroTaty = lucro; }
+    else { // Almeida
+      const comFixa = isAmbos ? (COM_ALMEIDA_PJ+COM_ALMEIDA_PF) : isPF ? COM_ALMEIDA_PF : COM_ALMEIDA_PJ;
+      const precoNormal = isAmbos ? (PRECO_NORMAL_PJ+PRECO_NORMAL_PF) : isPF ? PRECO_NORMAL_PF : PRECO_NORMAL_PJ;
+      comissao = venda >= precoNormal ? comFixa : Math.round(lucro*0.5*100)/100;
+      lucroTaty = venda - comissao;
+    }
+  } else {
+    // Normal
+    custo = isAmbos ? (CUSTO_PJ+CUSTO_PF) : isPF ? CUSTO_PF : CUSTO_PJ;
+    const lucro = venda - custo;
+    if(isDGN || isProprio) { comissao = 0; lucroTaty = lucro; }
+    else { // Almeida
+      const comFixa = isAmbos ? (COM_ALMEIDA_PJ+COM_ALMEIDA_PF) : isPF ? COM_ALMEIDA_PF : COM_ALMEIDA_PJ;
+      const precoNormal = isAmbos ? (PRECO_NORMAL_PJ+PRECO_NORMAL_PF) : isPF ? PRECO_NORMAL_PF : PRECO_NORMAL_PJ;
+      comissao = venda >= precoNormal ? comFixa : Math.round(lucro*0.5*100)/100;
+      lucroTaty = venda - custo - comissao;
+    }
+  }
+
+  return {custo, comissao, lucroTaty, venda};
+}
+
+function getMesesFechamento() {
+  const meses = new Set();
+  allData.forEach(r => {
+    const v = r.dataVencimento||'';
+    if(v.length >= 7) {
+      // Usar data de emissão (venc - 12m)
+      try {
+        const d = new Date(v+'T00:00:00');
+        d.setFullYear(d.getFullYear()-1);
+        meses.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+      } catch(e){}
+    }
+  });
+  return [...meses].sort().reverse();
+}
+
+function getClientesMes(mes) {
+  return allData.filter(r => {
+    const v = r.dataVencimento||'';
+    if(v.length < 7) return false;
+    try {
+      const d = new Date(v+'T00:00:00');
+      d.setFullYear(d.getFullYear()-1);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      return key === mes;
+    } catch(e){ return false; }
+  });
+}
+
+let fechFiltroAtual = 'todos';
+
+function renderFechamento() {
+  // Preencher select de meses
+  const sel = document.getElementById('fechMes');
+  if(!sel) return;
+  const meses = getMesesFechamento();
+  if(!sel.options.length || sel.options.length !== meses.length) {
+    sel.innerHTML = meses.map(m => {
+      const [y,mo] = m.split('-');
+      const label = new Date(y,mo-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+      return `<option value="${m}">${label}</option>`;
+    }).join('');
+  }
+  const mes = sel.value || meses[0];
+  const dados = getClientesMes(mes);
+
+  // Calcular totais
+  let totVenda=0, totCusto=0, totCom=0, totTaty=0, totDGN=0, totBonus=0;
+  dados.forEach(r => {
+    const {custo,comissao,lucroTaty,venda} = calcComissao(r);
+    totVenda += venda;
+    totCusto += custo;
+    totCom += comissao;
+    totTaty += lucroTaty;
+    const ind = (r.indicador||'').toLowerCase();
+    if(ind==='dgn'||ind==='dgm') totDGN += venda;
+    if((r.tipoNegocio||'')!=='normal' && (r.tipoNegocio||'')!=='') totBonus++;
+  });
+
+  // KPIs
+  const kpis = document.getElementById('fechKpis');
+  if(kpis) kpis.innerHTML = `
+    <div class="fech-card fc-rec"><div class="fech-label">💳 Total Recebido</div><div class="fech-val">${fmtMoney(totVenda)}</div><div class="fech-sub">${dados.length} certificados</div></div>
+    <div class="fech-card fc-cust"><div class="fech-label">🏭 Custo Certificadora</div><div class="fech-val">${fmtMoney(totCusto)}</div><div class="fech-sub">bruto antes bônus</div></div>
+    <div class="fech-card fc-alm"><div class="fech-label">🤝 Comissão Almeida</div><div class="fech-val">${fmtMoney(totCom)}</div><div class="fech-sub">a repassar</div></div>
+    <div class="fech-card fc-dgn"><div class="fech-label">🏢 DGN/DGM</div><div class="fech-val">${fmtMoney(totDGN)}</div><div class="fech-sub">cobrar dia 25</div></div>
+    <div class="fech-card fc-bon"><div class="fech-label">🎁 Bônus</div><div class="fech-val">${totBonus}</div><div class="fech-sub">certificados</div></div>
+    <div class="fech-card fc-taty"><div class="fech-label">💚 Seu Lucro (Taty)</div><div class="fech-val" style="font-size:22px;color:var(--green)">${fmtMoney(totTaty)}</div><div class="fech-sub">líquido</div></div>`;
+
+  // Quinzenas
+  const [y,mo] = mes.split('-');
+  const q1dados = dados.filter(r => {
+    try { const d=new Date(r.dataVencimento+'T00:00:00'); d.setFullYear(d.getFullYear()-1); return d.getDate()<=15; } catch(e){return false;}
+  });
+  const q2dados = dados.filter(r => {
+    try { const d=new Date(r.dataVencimento+'T00:00:00'); d.setFullYear(d.getFullYear()-1); return d.getDate()>15; } catch(e){return false;}
+  });
+  const q1custo = q1dados.reduce((s,r)=>s+calcComissao(r).custo,0);
+  const q2custo = q2dados.reduce((s,r)=>s+calcComissao(r).custo,0);
+  const q1pago = localStorage.getItem(`quint_${mes}_1`)==='pago';
+  const q2pago = localStorage.getItem(`quint_${mes}_2`)==='pago';
+
+  const qEl = document.getElementById('fechQuinzenas');
+  if(qEl) qEl.innerHTML = `
+    <div class="quint-card">
+      <div class="quint-info">
+        <div class="quint-title">1ª Quinzena — dias 01 a 15</div>
+        <div class="quint-sub">${q1dados.length} certificados | Custo: ${fmtMoney(q1custo)}</div>
+      </div>
+      <div style="font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${q1pago?'var(--green)':'var(--red)'};">${fmtMoney(q1custo)}</div>
+      <button class="btn ${q1pago?'btn-ghost':'btn-green'} btn-sm" onclick="toggleQuint('${mes}',1,this)">
+        ${q1pago?'✅ Pago':'Marcar Pago'}
+      </button>
+    </div>
+    <div class="quint-card">
+      <div class="quint-info">
+        <div class="quint-title">2ª Quinzena — dias 16 a 31</div>
+        <div class="quint-sub">${q2dados.length} certificados | Custo: ${fmtMoney(q2custo)}</div>
+      </div>
+      <div style="font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${q2pago?'var(--green)':'var(--red)'};">${fmtMoney(q2custo)}</div>
+      <button class="btn ${q2pago?'btn-ghost':'btn-green'} btn-sm" onclick="toggleQuint('${mes}',2,this)">
+        ${q2pago?'✅ Pago':'Marcar Pago'}
+      </button>
+    </div>`;
+
+  renderFechBody(dados, fechFiltroAtual);
+  renderFechDGN(dados);
+}
+
+function toggleQuint(mes,q,btn) {
+  const key = `quint_${mes}_${q}`;
+  const pago = localStorage.getItem(key)==='pago';
+  localStorage.setItem(key, pago?'pendente':'pago');
+  renderFechamento();
+}
+
+function filtrarFech(tipo, el) {
+  fechFiltroAtual = tipo;
+  document.querySelectorAll('#fechFiltros .mes-chip').forEach(c=>c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const mes = document.getElementById('fechMes')?.value;
+  const dados = mes ? getClientesMes(mes) : [];
+  renderFechBody(dados, tipo);
+}
+
+function renderFechBody(dados, filtro) {
+  const tbody = document.getElementById('fechBody');
+  if(!tbody) return;
+
+  let filtered = dados;
+  if(filtro === 'almeida') filtered = dados.filter(r=>(r.indicador||'Almeida').toLowerCase()==='almeida');
+  else if(filtro === 'dgn') filtered = dados.filter(r=>['dgn','dgm'].includes((r.indicador||'').toLowerCase()));
+  else if(filtro === 'proprio') filtered = dados.filter(r=>['próprio','proprio'].includes((r.indicador||'').toLowerCase()));
+  else if(filtro === 'bonus') filtered = dados.filter(r=>(r.tipoNegocio||'normal')!=='normal');
+
+  const tipoNegLabels = {
+    'normal':'<span class="tipo-badge tipo-normal">💰 Normal</span>',
+    'bonus-cliente':'<span class="tipo-badge tipo-bonus-cliente">🎁 Bônus Cliente</span>',
+    'bonus-custo':'<span class="tipo-badge tipo-bonus-custo">🎫 Bônus Custo</span>',
+    'dgn':'<span class="tipo-badge tipo-dgn">🏢 DGN/DGM</span>'
+  };
+
+  tbody.innerHTML = filtered.length ? filtered.map((r,i) => {
+    const {custo,comissao,lucroTaty,venda} = calcComissao(r);
+    const tipo = (r.tipoCertificadoPF_PJ||'pj').toUpperCase();
+    const ind = r.indicador||'Almeida';
+    const tNeg = r.tipoNegocio||'normal';
+    const pgto = r.situacaoPagamento||'Não Informado';
+    const pgtoColor = pgto==='Pago'?'var(--green)':pgto==='Pendente'?'var(--yellow)':'var(--text3)';
+    const idx = allData.indexOf(r);
+    return `<tr>
+      <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.razaoSocial||'-'}</td>
+      <td><span class="badge" style="font-size:10px">${tipo}</span></td>
+      <td style="font-size:11px">${ind}</td>
+      <td><select onchange="setTipoNegocio(${idx},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 6px;color:var(--text);font-size:10.5px;">
+        <option value="normal" ${tNeg==='normal'?'selected':''}>💰 Normal</option>
+        <option value="bonus-cliente" ${tNeg==='bonus-cliente'?'selected':''}>🎁 Bônus Cliente</option>
+        <option value="bonus-custo" ${tNeg==='bonus-custo'?'selected':''}>🎫 Bônus Custo</option>
+      </select></td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">${fmtMoney(venda)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--red)">${fmtMoney(custo)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">${fmtMoney(comissao)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${lucroTaty>=0?'var(--green)':'var(--red)'}">${fmtMoney(lucroTaty)}</td>
+      <td style="color:${pgtoColor};font-weight:600;font-size:11px">${pgto}</td>
+      <td><button class="btn btn-ghost btn-sm" style="font-size:10px" onclick="marcarPagoFech(${idx})">✅ Pago</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3)">Nenhum registro encontrado</td></tr>`;
+}
+
+function setTipoNegocio(idx, tipo) {
+  if(allData[idx]) { allData[idx].tipoNegocio = tipo; save(); renderFechamento(); }
+}
+
+function marcarPagoFech(idx) {
+  if(allData[idx]) { allData[idx].situacaoPagamento = 'Pago'; save(); renderFechamento(); notify('Marcado como Pago!'); }
+}
+
+function renderFechDGN(dados) {
+  const dgnEl = document.getElementById('fechDGN');
+  if(!dgnEl) return;
+  const dgn = dados.filter(r=>['dgn','dgm'].includes((r.indicador||'').toLowerCase()));
+  if(!dgn.length) { dgnEl.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:16px;">Nenhum certificado DGN/DGM neste mês</div>'; return; }
+  const total = dgn.reduce((s,r)=>s+calcComissao(r).venda,0);
+  dgnEl.innerHTML = `
+    <table class="fech-table" style="margin-bottom:12px;">
+      <thead><tr><th>Cliente</th><th>Tipo</th><th>Valor</th><th>Pgto</th></tr></thead>
+      <tbody>${dgn.map(r=>`<tr>
+        <td style="font-weight:600">${r.razaoSocial}</td>
+        <td>${(r.tipoCertificadoPF_PJ||'pj').toUpperCase()}</td>
+        <td style="font-family:'JetBrains Mono',monospace;color:var(--teal)">${fmtMoney(calcComissao(r).venda)}</td>
+        <td style="color:${r.situacaoPagamento==='Pago'?'var(--green)':'var(--yellow)'}">${r.situacaoPagamento||'Pendente'}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg3);border-radius:8px;">
+      <span style="font-weight:700">Total a cobrar no dia 25:</span>
+      <span style="font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--teal)">${fmtMoney(total)}</span>
+    </div>`;
+}
+
+function exportarFechamento() {
+  const mes = document.getElementById('fechMes')?.value;
+  if(!mes) return;
+  const dados = getClientesMes(mes);
+  const rows = dados.map(r => {
+    const {custo,comissao,lucroTaty,venda} = calcComissao(r);
+    return {'Cliente':r.razaoSocial,'CNPJ':r.cnpj,'Tipo':r.tipoCertificadoPF_PJ,'Indicador':r.indicador||'Almeida','Tipo Negócio':r.tipoNegocio||'normal','Valor Venda':venda,'Custo Cert.':custo,'Comissão':comissao,'Lucro Taty':lucroTaty,'Pagamento':r.situacaoPagamento||''};
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Fechamento');
+  XLSX.writeFile(wb,`fechamento_${mes}.xlsx`);
+  notify('Fechamento exportado!');
+}
+
+function exportarCobrancaDGN() {
+  const mes = document.getElementById('fechMes')?.value;
+  if(!mes) return;
+  const dados = getClientesMes(mes).filter(r=>['dgn','dgm'].includes((r.indicador||'').toLowerCase()));
+  if(!dados.length){notify('Nenhum cliente DGN neste mês','error');return;}
+  const rows = dados.map(r=>({'Cliente':r.razaoSocial,'CNPJ':r.cnpj,'Tipo':r.tipoCertificadoPF_PJ,'Valor':calcComissao(r).venda,'Vencimento':r.dataVencimento,'Pagamento':r.situacaoPagamento||'Pendente'}));
+  const total = dados.reduce((s,r)=>s+calcComissao(r).venda,0);
+  rows.push({'Cliente':'TOTAL','CNPJ':'','Tipo':'','Valor':total,'Vencimento':'','Pagamento':''});
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Cobrança DGN');
+  XLSX.writeFile(wb,`cobranca_dgn_${mes}.xlsx`);
+  notify('Cobrança DGN exportada!');
 }
 
 function renderDashboard() {
