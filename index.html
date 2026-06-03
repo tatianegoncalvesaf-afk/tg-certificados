@@ -2948,6 +2948,82 @@ function exportReceitaExcel(){
 let agendamentos = JSON.parse(localStorage.getItem('agendamentos')||'[]');
 let agendaTimer = null;
 
+let agendaClientesSelecionados = [];
+
+function carregarClientesAgenda() {
+  const filtro = document.getElementById('agendaFiltro').value;
+  const wrap = document.getElementById('agendaClientesWrap');
+  if(!wrap) return;
+
+  const clientes = allData.filter(r => {
+    if((r.statusContato||'')==='inativo') return false;
+    if(!r.whatsapp) return false;
+    const st = getStatus(r.dataVencimento).key;
+    if(filtro==='vencidos') return st==='vencido';
+    if(filtro==='urgentes') return st==='urgente';
+    if(filtro==='atencao') return st==='atencao';
+    return st==='vencido'||st==='urgente'||st==='atencao';
+  });
+
+  if(!clientes.length) {
+    wrap.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text3);">Nenhum cliente encontrado neste filtro</div>';
+    agendaClientesSelecionados = [];
+    atualizarContadorAgenda();
+    return;
+  }
+
+  // Pré-selecionar todos
+  agendaClientesSelecionados = clientes.map((_,i)=>i);
+
+  wrap.innerHTML = clientes.map((r,i) => {
+    const dias = getDias(r.dataVencimento);
+    const st = getStatus(r.dataVencimento);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="toggleAgendaCliente(${i},this)">
+      <input type="checkbox" checked id="agChk-${i}" style="cursor:pointer;" onclick="event.stopPropagation();toggleAgendaCliente(${i},this.closest('div'))"/>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.razaoSocial}</div>
+        <div style="font-size:10.5px;color:var(--text3);">${r.cnpj} · <span class="badge ${st.cls}" style="font-size:9px">${st.label}</span> · ${dias}d · ${r.whatsapp}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  atualizarContadorAgenda();
+  // Guardar referência
+  wrap._clientes = clientes;
+}
+
+function toggleAgendaCliente(i, el) {
+  const chk = document.getElementById(`agChk-${i}`);
+  if(!chk) return;
+  const idx = agendaClientesSelecionados.indexOf(i);
+  if(idx >= 0) {
+    agendaClientesSelecionados.splice(idx,1);
+    chk.checked = false;
+    if(el) el.style.background = '';
+  } else {
+    agendaClientesSelecionados.push(i);
+    chk.checked = true;
+    if(el) el.style.background = 'rgba(0,214,143,0.05)';
+  }
+  atualizarContadorAgenda();
+}
+
+function toggleTodosAgenda(sel) {
+  const wrap = document.getElementById('agendaClientesWrap');
+  if(!wrap || !wrap._clientes) { carregarClientesAgenda(); return; }
+  agendaClientesSelecionados = sel ? wrap._clientes.map((_,i)=>i) : [];
+  wrap.querySelectorAll('input[type=checkbox]').forEach((chk,i) => {
+    chk.checked = sel;
+    chk.closest('div').style.background = sel ? 'rgba(0,214,143,0.05)' : '';
+  });
+  atualizarContadorAgenda();
+}
+
+function atualizarContadorAgenda() {
+  const el = document.getElementById('agendaSelCount');
+  if(el) el.textContent = `${agendaClientesSelecionados.length} clientes selecionados`;
+}
+
 function criarAgendamento() {
   const data = document.getElementById('agendaData').value;
   const hora = document.getElementById('agendaHora').value;
@@ -2960,9 +3036,21 @@ function criarAgendamento() {
   const dataHora = new Date(`${data}T${hora}:00`);
   if(dataHora <= new Date()) { notify('O horário deve ser no futuro!','error'); return; }
 
+  const wrap = document.getElementById('agendaClientesWrap');
+  const clientes = wrap && wrap._clientes ? wrap._clientes : null;
+  const cnpjsSelecionados = clientes && agendaClientesSelecionados.length > 0
+    ? agendaClientesSelecionados.map(i => clientes[i]?.cnpj).filter(Boolean)
+    : null; // null = usar filtro automático
+
+  if(cnpjsSelecionados && cnpjsSelecionados.length === 0) {
+    notify('Selecione pelo menos 1 cliente!','error'); return;
+  }
+
   const agenda = {
     id: Date.now(),
     data, hora, tmpl, filtro, desc,
+    cnpjsSelecionados,
+    totalClientes: cnpjsSelecionados ? cnpjsSelecionados.length : 'automático',
     dataHora: dataHora.toISOString(),
     status: 'pendente',
     criadoEm: new Date().toLocaleString('pt-BR')
@@ -3010,7 +3098,7 @@ function renderAgendamentos() {
         <div class="agenda-header">
           <div>
             <div class="agenda-title">⏰ ${a.data} às ${a.hora} ${a.desc?'— '+a.desc:''}</div>
-            <div class="agenda-sub">${tmplNomes[a.tmpl]||a.tmpl} · ${filtroNomes[a.filtro]||a.filtro}</div>
+            <div class="agenda-sub">${tmplNomes[a.tmpl]||a.tmpl} · ${a.cnpjsSelecionados?a.cnpjsSelecionados.length+' clientes selecionados':filtroNomes[a.filtro]||a.filtro}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div class="agenda-countdown" id="countdown-${a.id}">${countdown}</div>
@@ -3054,16 +3142,18 @@ async function verificarAgendamentos() {
       salvarAgendamentos();
       notify(`🚀 Executando disparo agendado: ${ag.desc||ag.tmpl}...`);
 
-      // Montar lista de clientes
-      const clientes = allData.filter(r => {
-        if((r.statusContato||'')==='inativo') return false;
-        if(!r.whatsapp) return false;
-        const st = getStatus(r.dataVencimento).key;
-        if(ag.filtro==='vencidos') return st==='vencido';
-        if(ag.filtro==='urgentes') return st==='urgente';
-        if(ag.filtro==='atencao') return st==='atencao';
-        return st==='vencido'||st==='urgente'||st==='atencao';
-      });
+      // Montar lista de clientes — usar selecionados ou filtro
+      const clientes = ag.cnpjsSelecionados
+        ? allData.filter(r => ag.cnpjsSelecionados.includes(r.cnpj) && r.whatsapp)
+        : allData.filter(r => {
+            if((r.statusContato||'')==='inativo') return false;
+            if(!r.whatsapp) return false;
+            const st = getStatus(r.dataVencimento).key;
+            if(ag.filtro==='vencidos') return st==='vencido';
+            if(ag.filtro==='urgentes') return st==='urgente';
+            if(ag.filtro==='atencao') return st==='atencao';
+            return st==='vencido'||st==='urgente'||st==='atencao';
+          });
 
       const id = localStorage.getItem('zapiId');
       const tk = localStorage.getItem('zapiToken');
