@@ -1052,10 +1052,12 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
       <div style="margin-bottom:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <label style="font-size:10.5px;color:var(--text3);font-weight:700;">👥 Clientes</label>
-          <div style="display:flex;gap:5px;">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
             <button class="btn btn-ghost btn-sm" onclick="carregarClientesAgenda()" style="font-size:10px;">🔄 Carregar</button>
             <button class="btn btn-ghost btn-sm" onclick="toggleTodosAgenda(true)" style="font-size:10px;">✅ Todos</button>
             <button class="btn btn-ghost btn-sm" onclick="toggleTodosAgenda(false)" style="font-size:10px;">⬜ Nenhum</button>
+            <button class="btn btn-ghost btn-sm" onclick="flagarTodosAgenda(true)" style="font-size:10px;color:var(--yellow);">🚩 Flagar Todos</button>
+            <button class="btn btn-ghost btn-sm" onclick="flagarTodosAgenda(false)" style="font-size:10px;">🏳️ Desflagar Todos</button>
           </div>
         </div>
         <input type="text" id="agendaBusca" placeholder="🔍 Buscar por nome, CNPJ ou contato..." oninput="filtrarListaAgenda(this.value)" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-family:inherit;font-size:12px;margin-bottom:6px;display:none;"/>
@@ -2998,12 +3000,13 @@ function carregarClientesAgenda() {
   wrap.innerHTML = clientes.map((r,i) => {
     const dias = getDias(r.dataVencimento);
     const st = getStatus(r.dataVencimento);
-    return `<div class="agenda-cliente-row" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="toggleAgendaCliente(${i},this)">
-      <input type="checkbox" checked id="agChk-${i}" style="cursor:pointer;" onclick="event.stopPropagation();toggleAgendaCliente(${i},this.closest('div'))"/>
+    return `<div class="agenda-cliente-row" data-flagged="0" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="toggleAgendaCliente(${i},this)">
+      <input type="checkbox" checked id="agChk-${i}" style="cursor:pointer;" onclick="event.stopPropagation();toggleAgendaCliente(${i},this.closest('div[class]'))"/>
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.razaoSocial}</div>
         <div style="font-size:10.5px;color:var(--text3);">${r.cnpj} · <span class="badge ${st.cls}" style="font-size:9px">${st.label}</span> · ${dias}d · ${r.whatsapp}</div>
       </div>
+      <span class="agenda-flag" title="Flagar cliente" style="font-size:14px;cursor:pointer;color:var(--text3);flex-shrink:0;" onclick="event.stopPropagation();toggleFlagAgenda(this)">🏳️</span>
     </div>`;
   }).join('');
 
@@ -3026,6 +3029,28 @@ function toggleAgendaCliente(i, el) {
     if(el) el.style.background = 'rgba(0,214,143,0.05)';
   }
   atualizarContadorAgenda();
+}
+
+function flagarTodosAgenda(flagar) {
+  const wrap = document.getElementById('agendaClientesWrap');
+  if(!wrap || !wrap._clientes) { notify('Carregue a lista primeiro!','error'); return; }
+  // Aplicar só nos visíveis (após filtro de busca)
+  const rows = wrap.querySelectorAll('.agenda-cliente-row');
+  rows.forEach((row, i) => {
+    if(row.style.display === 'none') return; // pular os ocultos pelo filtro
+    const flagEl = row.querySelector('.agenda-flag');
+    if(flagar) {
+      row.dataset.flagged = '1';
+      if(flagEl) { flagEl.textContent = '🚩'; flagEl.style.color = 'var(--yellow)'; }
+      row.style.borderLeft = '3px solid var(--yellow)';
+    } else {
+      row.dataset.flagged = '0';
+      if(flagEl) { flagEl.textContent = '🏳️'; flagEl.style.color = 'var(--text3)'; }
+      row.style.borderLeft = '';
+    }
+  });
+  const flagados = wrap.querySelectorAll('[data-flagged="1"]').length;
+  notify(flagar ? `🚩 ${flagados} clientes flagados!` : '🏳️ Todos desflagados!');
 }
 
 function filtrarListaAgenda(termo) {
@@ -3059,6 +3084,29 @@ function toggleTodosAgenda(sel) {
     chk.closest('div').style.background = sel ? 'rgba(0,214,143,0.05)' : '';
   });
   atualizarContadorAgenda();
+}
+
+function toggleFlagAgenda(el) {
+  const row = el.closest('.agenda-cliente-row');
+  if(!row) return;
+  const flagado = row.dataset.flagged === '1';
+  if(flagado) {
+    row.dataset.flagged = '0';
+    el.textContent = '🏳️';
+    el.style.color = 'var(--text3)';
+    row.style.borderLeft = '';
+  } else {
+    row.dataset.flagged = '1';
+    el.textContent = '🚩';
+    el.style.color = 'var(--yellow)';
+    row.style.borderLeft = '3px solid var(--yellow)';
+  }
+  const flagados = document.querySelectorAll('#agendaClientesWrap [data-flagged="1"]').length;
+  const selCount = document.getElementById('agendaSelCount');
+  if(selCount) {
+    const sel = agendaClientesSelecionados.length;
+    selCount.textContent = `${sel} selecionados${flagados>0?' · 🚩 '+flagados+' flagados':''}`;
+  }
 }
 
 function atualizarContadorAgenda() {
