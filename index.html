@@ -1002,7 +1002,7 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
 </div>
 
 <!-- MODAL AGENDAMENTO -->
-<div class="modal-overlay" id="agendamentoModal">
+<div class="modal-overlay" <div class="modal-overlay" id="agendamentoModal">
 <div class="modal wide">
   <div class="modal-header">
     <div class="modal-title">⏰ Disparos Agendados</div>
@@ -1046,39 +1046,6 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
         <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">📝 Descrição (opcional)</label>
         <input type="text" id="agendaDesc" placeholder="Ex: Disparo semanal vencidos..." style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;"/>
       </div>
-
-      <!-- Seleção de clientes -->
-      <div style="margin-bottom:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <label style="font-size:10.5px;color:var(--text3);font-weight:700;">👥 Clientes</label>
-          <div style="display:flex;gap:5px;">
-            <button class="btn btn-ghost btn-sm" onclick="carregarClientesAgenda()" style="font-size:10px;">🔄 Carregar</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleTodosAgenda(true)" style="font-size:10px;">✅ Todos</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleTodosAgenda(false)" style="font-size:10px;">⬜ Nenhum</button>
-          </div>
-        </div>
-        <div id="agendaClientesWrap" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg2);">
-          <div style="padding:14px;text-align:center;font-size:12px;color:var(--text3);">Clique em "🔄 Carregar" para ver os clientes</div>
-        </div>
-        <div style="font-size:10.5px;color:var(--text3);margin-top:4px;" id="agendaSelCount">0 clientes selecionados</div>
-      </div>
-
-      <!-- Seleção de clientes -->
-      <div style="margin-bottom:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <label style="font-size:10.5px;color:var(--text3);font-weight:700;">👥 Clientes</label>
-          <div style="display:flex;gap:5px;">
-            <button class="btn btn-ghost btn-sm" onclick="carregarClientesAgenda()" style="font-size:10px;">🔄 Carregar lista</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleTodosAgenda(true)" style="font-size:10px;">✅ Todos</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleTodosAgenda(false)" style="font-size:10px;">⬜ Nenhum</button>
-          </div>
-        </div>
-        <div id="agendaClientesWrap" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg2);">
-          <div style="padding:14px;text-align:center;font-size:12px;color:var(--text3);">Clique em "🔄 Carregar lista" para ver os clientes</div>
-        </div>
-        <div style="font-size:10.5px;color:var(--text3);margin-top:4px;" id="agendaSelCount">0 clientes selecionados</div>
-      </div>
-
       <div style="margin-bottom:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <label style="font-size:10.5px;color:var(--text3);font-weight:700;">👥 Clientes</label>
