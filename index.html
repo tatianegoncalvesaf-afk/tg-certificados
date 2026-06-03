@@ -1696,6 +1696,11 @@ function gerarMsg(tmpl, row) {
   msg = msg.replace(/{{socioResponsavel}}/g,row.socioResponsavel||'sócio');
   msg = msg.replace(/{{dataVencimento}}/g,fmtDate(dv));
   msg = msg.replace(/Vencimento:/g,dvLabel+':');
+  // Remover menção ao Almeida se for cliente próprio
+  const indicador = (row.indicador||'Almeida').trim().toLowerCase();
+  if(indicador === 'próprio' || indicador === 'proprio') {
+    msg = msg.replace(', somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais','');
+  }
   msg = msg.replace(/Vence em:/g,dvLabel+':');
   return msg;
 }
