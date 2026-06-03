@@ -339,6 +339,15 @@ tbody tr.inativo-row td{opacity:0.6;}
 .tipo-bonus-custo{background:rgba(0,214,143,0.12);color:var(--green);border-color:rgba(0,214,143,0.3);}
 .tipo-dgn{background:rgba(0,201,212,0.12);color:var(--teal);border-color:rgba(0,201,212,0.3);}
 
+/* ─── AGENDAMENTO DISPARO ─── */
+.agenda-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;}
+.agenda-card.ativo{border-color:rgba(0,214,143,0.4);background:rgba(0,214,143,0.04);}
+.agenda-card.pendente{border-color:rgba(255,209,102,0.4);background:rgba(255,209,102,0.04);}
+.agenda-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.agenda-title{font-size:13px;font-weight:700;}
+.agenda-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.agenda-countdown{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--yellow);}
+
 /* RESPONSIVE */
 @media(max-width:900px){
   /* TEMA CLARO */
@@ -987,6 +996,69 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
       <button class="btn btn-ghost" id="ob-btn-back" onclick="obBack()" style="display:none">← Voltar</button>
       <button class="btn btn-primary" id="ob-btn-next" onclick="obNext()">Próximo →</button>
     </div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL AGENDAMENTO -->
+<div class="modal-overlay" id="agendamentoModal">
+<div class="modal wide">
+  <div class="modal-header">
+    <div class="modal-title">⏰ Disparos Agendados</div>
+    <button class="modal-close" onclick="closeModal('agendamentoModal')">✕</button>
+  </div>
+  <div class="modal-body">
+    <!-- Novo agendamento -->
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">➕ Novo Agendamento</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">📅 Data</label>
+          <input type="date" id="agendaData" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;"/>
+        </div>
+        <div>
+          <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">🕐 Horário</label>
+          <input type="time" id="agendaHora" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">📝 Template</label>
+          <select id="agendaTmpl" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;">
+            <option value="primeiro-contato">🤝 1º Contato</option>
+            <option value="lembrete">👋 Lembrete</option>
+            <option value="urgente">⚠️ Urgente</option>
+            <option value="documentos">📄 Documentos</option>
+            <option value="agradecimento">🙏 Agradecimento</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">🎯 Filtro de Clientes</label>
+          <select id="agendaFiltro" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;">
+            <option value="vencidos">🔴 Vencidos</option>
+            <option value="urgentes">🟠 Urgentes (≤15d)</option>
+            <option value="atencao">🟡 Atenção (≤45d)</option>
+            <option value="todos">📋 Todos pendentes</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:10.5px;color:var(--text3);display:block;margin-bottom:4px;">📝 Descrição (opcional)</label>
+        <input type="text" id="agendaDesc" placeholder="Ex: Disparo semanal vencidos..." style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;"/>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.2);border-radius:8px;margin-bottom:10px;">
+        <span style="font-size:13px;">⚠️</span>
+        <span style="font-size:11px;color:var(--yellow);">O painel precisa estar aberto no horário do disparo para funcionar.</span>
+      </div>
+      <button class="btn btn-green" onclick="criarAgendamento()" style="width:100%;">⏰ Agendar Disparo</button>
+    </div>
+    <!-- Lista de agendamentos -->
+    <div id="agendaLista">
+      <div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Nenhum agendamento criado ainda.</div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeModal('agendamentoModal')">Fechar</button>
   </div>
 </div>
 </div>
@@ -2869,6 +2941,169 @@ function exportReceitaExcel(){
 // ============================================================
 // BACKUP & RESTAURAÇÃO
 // ============================================================
+// ══════════════════════════════════════════
+// DISPAROS AGENDADOS
+// ══════════════════════════════════════════
+let agendamentos = JSON.parse(localStorage.getItem('agendamentos')||'[]');
+let agendaTimer = null;
+
+function criarAgendamento() {
+  const data = document.getElementById('agendaData').value;
+  const hora = document.getElementById('agendaHora').value;
+  const tmpl = document.getElementById('agendaTmpl').value;
+  const filtro = document.getElementById('agendaFiltro').value;
+  const desc = document.getElementById('agendaDesc').value.trim();
+
+  if(!data||!hora) { notify('Informe data e horário!','error'); return; }
+
+  const dataHora = new Date(`${data}T${hora}:00`);
+  if(dataHora <= new Date()) { notify('O horário deve ser no futuro!','error'); return; }
+
+  const agenda = {
+    id: Date.now(),
+    data, hora, tmpl, filtro, desc,
+    dataHora: dataHora.toISOString(),
+    status: 'pendente',
+    criadoEm: new Date().toLocaleString('pt-BR')
+  };
+
+  agendamentos.push(agenda);
+  salvarAgendamentos();
+  renderAgendamentos();
+  iniciarTimerAgenda();
+  notify(`✅ Disparo agendado para ${data} às ${hora}!`);
+
+  // Limpar campos
+  document.getElementById('agendaData').value = '';
+  document.getElementById('agendaHora').value = '';
+  document.getElementById('agendaDesc').value = '';
+}
+
+function salvarAgendamentos() {
+  localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
+}
+
+function renderAgendamentos() {
+  const lista = document.getElementById('agendaLista');
+  if(!lista) return;
+  const ativos = agendamentos.filter(a=>a.status==='pendente');
+  const concluidos = agendamentos.filter(a=>a.status!=='pendente').slice(-5);
+
+  if(!agendamentos.length) {
+    lista.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Nenhum agendamento criado ainda.</div>';
+    return;
+  }
+
+  const tmplNomes = {'primeiro-contato':'🤝 1º Contato','lembrete':'👋 Lembrete','urgente':'⚠️ Urgente','documentos':'📄 Documentos','agradecimento':'🙏 Agradecimento'};
+  const filtroNomes = {'vencidos':'🔴 Vencidos','urgentes':'🟠 Urgentes','atencao':'🟡 Atenção','todos':'📋 Todos pendentes'};
+
+  lista.innerHTML = `
+    ${ativos.length ? `<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:8px;">⏳ Pendentes (${ativos.length})</div>` : ''}
+    ${ativos.map(a => {
+      const dh = new Date(a.dataHora);
+      const diff = dh - new Date();
+      const horas = Math.floor(diff/3600000);
+      const min = Math.floor((diff%3600000)/60000);
+      const countdown = diff > 0 ? (horas > 0 ? `${horas}h ${min}m` : `${min}m`) : 'Executando...';
+      return `<div class="agenda-card ${a.status}">
+        <div class="agenda-header">
+          <div>
+            <div class="agenda-title">⏰ ${a.data} às ${a.hora} ${a.desc?'— '+a.desc:''}</div>
+            <div class="agenda-sub">${tmplNomes[a.tmpl]||a.tmpl} · ${filtroNomes[a.filtro]||a.filtro}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="agenda-countdown" id="countdown-${a.id}">${countdown}</div>
+            <button class="btn btn-danger btn-sm" onclick="cancelarAgenda(${a.id})">✕</button>
+          </div>
+        </div>
+        <div style="font-size:10.5px;color:var(--text3);">Criado em: ${a.criadoEm}</div>
+      </div>`;
+    }).join('')}
+    ${concluidos.length ? `
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin:12px 0 8px;">✅ Concluídos recentes</div>
+      ${concluidos.reverse().map(a=>`<div class="agenda-card" style="opacity:0.6;">
+        <div class="agenda-title" style="font-size:12px;">✅ ${a.data} às ${a.hora} — ${a.status==='concluido'?'Executado':'Cancelado'}</div>
+        <div class="agenda-sub">${tmplNomes[a.tmpl]||a.tmpl} · ${filtroNomes[a.filtro]||a.filtro} ${a.desc?'· '+a.desc:''}</div>
+      </div>`).join('')}` : ''}`;
+}
+
+function cancelarAgenda(id) {
+  agendamentos = agendamentos.map(a => a.id===id ? {...a, status:'cancelado'} : a);
+  salvarAgendamentos();
+  renderAgendamentos();
+  notify('Agendamento cancelado!');
+}
+
+function iniciarTimerAgenda() {
+  if(agendaTimer) clearInterval(agendaTimer);
+  agendaTimer = setInterval(verificarAgendamentos, 30000); // verifica a cada 30s
+  verificarAgendamentos(); // verificar imediatamente
+}
+
+async function verificarAgendamentos() {
+  const agora = new Date();
+  let executou = false;
+
+  for(const ag of agendamentos) {
+    if(ag.status !== 'pendente') continue;
+    const dh = new Date(ag.dataHora);
+    if(agora >= dh) {
+      // Hora de disparar!
+      ag.status = 'executando';
+      salvarAgendamentos();
+      notify(`🚀 Executando disparo agendado: ${ag.desc||ag.tmpl}...`);
+
+      // Montar lista de clientes
+      const clientes = allData.filter(r => {
+        if((r.statusContato||'')==='inativo') return false;
+        if(!r.whatsapp) return false;
+        const st = getStatus(r.dataVencimento).key;
+        if(ag.filtro==='vencidos') return st==='vencido';
+        if(ag.filtro==='urgentes') return st==='urgente';
+        if(ag.filtro==='atencao') return st==='atencao';
+        return st==='vencido'||st==='urgente'||st==='atencao';
+      });
+
+      const id = localStorage.getItem('zapiId');
+      const tk = localStorage.getItem('zapiToken');
+      const ct = localStorage.getItem('zapiCt');
+      let env=0, err=0;
+
+      for(const r of clientes) {
+        const msg = gerarMsg(ag.tmpl, r);
+        const res = await zapiSend(id, tk, ct, r.whatsapp, msg);
+        if(res.ok) {
+          env++;
+          const idx = allData.indexOf(r);
+          if(idx>=0) {
+            allData[idx].statusContato = 'contatado';
+            allData[idx].dataUltimoContato = new Date().toISOString().split('T')[0];
+            if(!allData[idx].historico) allData[idx].historico=[];
+            allData[idx].historico.push({icon:'⏰',title:'Disparo agendado automático',note:`Template: ${ag.tmpl}`,date:new Date().toLocaleString('pt-BR'),author:'Sistema'});
+          }
+        } else { err++; }
+        await new Promise(res=>setTimeout(res,3000));
+      }
+
+      ag.status = 'concluido';
+      ag.resultado = `✅ ${env} enviados · ❌ ${err} erros`;
+      salvarAgendamentos();
+      save();
+      renderTable();
+      notify(`✅ Disparo agendado concluído! ${env} enviados · ${err} erros`);
+      executou = true;
+    }
+  }
+
+  // Atualizar contadores na tela
+  if(document.getElementById('agendaLista')) renderAgendamentos();
+
+  // Atualizar badge na nav
+  const pendentes = agendamentos.filter(a=>a.status==='pendente').length;
+  const navEl = document.getElementById('nav-agenda');
+  if(navEl) navEl.innerHTML = `<span class="nav-icon">⏰</span>Disparos Agendados${pendentes>0?` <span style="background:var(--yellow);color:#000;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px;font-weight:700;">${pendentes}</span>`:''}`;
+}
+
 function openLogDisparosModal(){
   const logs=JSON.parse(localStorage.getItem('disparoLogs')||'[]');
   const body=document.getElementById('logDisparosBody');
@@ -3030,6 +3265,10 @@ window.addEventListener('load',function(){
   });
   save();
   renderTable(); renderHorariosGrid(); renderDashboard(); atualizarInfoBackup();
+  // Iniciar verificação de agendamentos
+  agendamentos = JSON.parse(localStorage.getItem('agendamentos')||'[]');
+  iniciarTimerAgenda();
+  renderAgendamentos();
   document.getElementById('dashDate').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   // Se não há dados, sugerir migração
   if(!allData.length){ setTimeout(()=>notify('💡 Use "Migrar V23/V24" na sidebar para importar seus dados!','info'),1500); }
