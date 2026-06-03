@@ -1120,11 +1120,13 @@ function renderTable() {
   }
   if(currentSearch) {
     const s = currentSearch.toLowerCase();
-    const sDigits = s.replace(/[^\d]/g,''); // só números para busca de CNPJ/CPF
+    const sDigits = s.replace(/[^\d]/g,'');
     data = data.filter(r=>{
       if((r.razaoSocial||'').toLowerCase().includes(s)) return true;
       if((r.cnpj||'').includes(s)) return true;
       if((r.nomeContato||'').toLowerCase().includes(s)) return true;
+      if((r.socioResponsavel||'').toLowerCase().includes(s)) return true;
+      if((r.nomeFantasia||'').toLowerCase().includes(s)) return true;
       if(sDigits && (r.cnpj||'').replace(/[^\d]/g,'').includes(sDigits)) return true;
       return false;
     });
