@@ -1042,7 +1042,14 @@ function renderTable() {
   }
   if(currentSearch) {
     const s = currentSearch.toLowerCase();
-    data = data.filter(r=>(r.razaoSocial||'').toLowerCase().includes(s)||(r.cnpj||'').includes(s));
+    const sDigits = s.replace(/[^\d]/g,''); // só números para busca de CNPJ/CPF
+    data = data.filter(r=>{
+      if((r.razaoSocial||'').toLowerCase().includes(s)) return true;
+      if((r.cnpj||'').includes(s)) return true;
+      if((r.nomeContato||'').toLowerCase().includes(s)) return true;
+      if(sDigits && (r.cnpj||'').replace(/[^\d]/g,'').includes(sDigits)) return true;
+      return false;
+    });
   }
   const tbody = document.getElementById('tableBody');
   document.getElementById('tableInfo').textContent = `Exibindo ${data.length} de ${allData.length} registros`;
