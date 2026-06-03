@@ -49,6 +49,33 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
 
 .main{display:flex;flex:1;}
+/* TEMA CLARO */
+body.tema-claro{
+  --bg: #f0f4ff;
+  --bg2: #ffffff;
+  --bg3: #e8eef8;
+  --border: #d0d8ee;
+  --border2: #b8c4de;
+  --text: #0d1220;
+  --text2: #3d5070;
+  --text3: #7a90b8;
+  --accent: #2d6ae0;
+  --accent2: #5b8ef0;
+  --green: #1a9e6e;
+  --red: #d93a52;
+  --yellow: #c49a00;
+  --purple: #7c4fd0;
+  --teal: #0a8f9a;
+  --orange: #d06020;
+}
+body.tema-claro .sidebar{background:#ffffff;border-right-color:#d0d8ee;}
+body.tema-claro .top-bar{background:#ffffff;border-bottom-color:#d0d8ee;}
+body.tema-claro .stat-card{background:#ffffff;}
+body.tema-claro .modal{background:#ffffff;}
+body.tema-claro input,body.tema-claro select,body.tema-claro textarea{background:#f0f4ff;color:#0d1220;border-color:#d0d8ee;}
+body.tema-claro .table-wrap{background:#ffffff;}
+body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
+
 .sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;position:sticky;top:60px;height:calc(100vh - 56px);overflow-y:auto;}
 .sidebar-section{padding:6px 16px 4px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-top:8px;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-radius:0;font-size:13px;color:var(--text2);transition:all 0.15s;border-left:3px solid transparent;user-select:none;}
@@ -314,7 +341,34 @@ tbody tr.inativo-row td{opacity:0.6;}
 
 /* RESPONSIVE */
 @media(max-width:900px){
-  .sidebar{display:none;}
+  /* TEMA CLARO */
+body.tema-claro{
+  --bg: #f0f4ff;
+  --bg2: #ffffff;
+  --bg3: #e8eef8;
+  --border: #d0d8ee;
+  --border2: #b8c4de;
+  --text: #0d1220;
+  --text2: #3d5070;
+  --text3: #7a90b8;
+  --accent: #2d6ae0;
+  --accent2: #5b8ef0;
+  --green: #1a9e6e;
+  --red: #d93a52;
+  --yellow: #c49a00;
+  --purple: #7c4fd0;
+  --teal: #0a8f9a;
+  --orange: #d06020;
+}
+body.tema-claro .sidebar{background:#ffffff;border-right-color:#d0d8ee;}
+body.tema-claro .top-bar{background:#ffffff;border-bottom-color:#d0d8ee;}
+body.tema-claro .stat-card{background:#ffffff;}
+body.tema-claro .modal{background:#ffffff;}
+body.tema-claro input,body.tema-claro select,body.tema-claro textarea{background:#f0f4ff;color:#0d1220;border-color:#d0d8ee;}
+body.tema-claro .table-wrap{background:#ffffff;}
+body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
+
+.sidebar{display:none;}
   .form-row{grid-template-columns:1fr;}
   .zapi-grid{grid-template-columns:1fr;}
   .stats-row{grid-template-columns:repeat(2,1fr);}
@@ -1895,6 +1949,20 @@ function calcFinanceiroForm() {
   }
 }
 
+function toggleTema() {
+  const body = document.body;
+  const btn = document.getElementById('btnTema');
+  if(body.classList.contains('tema-claro')) {
+    body.classList.remove('tema-claro');
+    if(btn) btn.textContent = '🌙';
+    localStorage.setItem('tema','escuro');
+  } else {
+    body.classList.add('tema-claro');
+    if(btn) btn.textContent = '☀️';
+    localStorage.setItem('tema','claro');
+  }
+}
+
 function toggleAtivo(i) {
   const r = allData[i];
   const eraInativo = (r.statusContato || '') === 'inativo';
@@ -2905,6 +2973,13 @@ window.addEventListener('load',function(){
   }
   // Forçar atualização do client-token se já existir
   localStorage.setItem('zapiCt','Fc77b6eef27e04c86928acba2238d90d0S');
+  // Aplicar tema salvo
+  const temaSalvo = localStorage.getItem('tema');
+  if(temaSalvo === 'claro') {
+    document.body.classList.add('tema-claro');
+    const btn = document.getElementById('btnTema');
+    if(btn) btn.textContent = '☀️';
+  }
   loadZapi();
   const saved=localStorage.getItem('certDataV30')||localStorage.getItem('certDataV29')||localStorage.getItem('certDataV28')||localStorage.getItem('certDataV27')||localStorage.getItem('certDataV26')||localStorage.getItem('certDataV25')||localStorage.getItem('certData');
   if(saved){ try{allData=JSON.parse(saved);}catch{} }
