@@ -586,7 +586,7 @@ tbody tr.inativo-row td{opacity:0.6;}
   <div class="modal-body">
     <div class="form-row">
       <div class="form-group"><label>Razão Social *</label><input type="text" id="fRazao"/></div>
-      <div class="form-group"><label>CNPJ *</label><div class="cnpj-row"><input type="text" id="fCnpj" placeholder="00.000.000/0000-00" oninput="onCnpjInput(this)"/><button class="btn btn-ghost btn-sm" onclick="buscarCnpj()">🔍</button></div><div class="cnpj-hint" id="cnpjHint"></div></div>
+      <div class="form-group"><label>CNPJ *</label><div class="cnpj-row"><input type="text" id="fCnpj" placeholder="CNPJ ou CPF" oninput="onCnpjInput(this)"/><button class="btn btn-ghost btn-sm" onclick="buscarCnpj()">🔍</button></div><div class="cnpj-hint" id="cnpjHint"></div></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Nome Fantasia</label><input type="text" id="fFantasia"/></div>
@@ -1573,7 +1573,7 @@ function onCnpjInput(el) {
 }
 async function buscarCnpj(auto=false) {
   const cnpj = document.getElementById('fCnpj').value.replace(/[^\d]/g,'');
-  if(cnpj.length!==14){ if(!auto) notify('CNPJ inválido','error'); return; }
+  if(cnpj.length!==14&&cnpj.length!==11){ if(!auto) notify('CNPJ/CPF inválido','error'); return; }
   lastCnpj=cnpj;
   const hint = document.getElementById('cnpjHint');
   hint.innerHTML='<span style="color:var(--accent)">⏳ Consultando Receita Federal...</span>';
