@@ -1222,6 +1222,24 @@ function getDias(dv) {
   const v = new Date(dv+'T00:00:00');
   return Math.floor((v-hoje)/(86400000));
 }
+function resetStatusDiario(){
+  const hoje = new Date().toISOString().split('T')[0];
+  const last = localStorage.getItem('lastStatusReset');
+  if(last === hoje) return;
+  let n = 0;
+  allData.forEach((r,i)=>{
+    if((r.statusContato||'') !== 'contatado') return;
+    if(chkInativo(r)) return;
+    const d = getDias(r.dataVencimento);
+    if(d === null || d > 45) return;
+    const uc = r.dataUltimoContato || '';
+    if(uc >= hoje) return;
+    allData[i].statusContato = 'nao-contatado';
+    n++;
+  });
+  localStorage.setItem('lastStatusReset', hoje);
+  if(n > 0){ save(); setTimeout(()=>notify(`🔄 Virada de dia: ${n} cliente(s) com vencimento próximo voltaram para "Não Contatado" — data do último contato preservada`,'info'),800); }
+}
 function getStatus(dv) {
   const d = getDias(dv);
   if(d===null) return { key:'semdata', label:'Sem Data', cls:'badge-ni' };
@@ -3470,10 +3488,12 @@ window.addEventListener('load',function(){
     }
   });
   save();
+  resetStatusDiario();
   renderTable(); renderHorariosGrid(); renderDashboard(); atualizarInfoBackup();
   // Iniciar verificação de agendamentos
   agendamentos = JSON.parse(localStorage.getItem('agendamentos')||'[]');
   iniciarTimerAgenda();
+  setInterval(()=>{ resetStatusDiario(); renderTable(); }, 3600000);
   renderAgendamentos();
   document.getElementById('dashDate').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   // Se não há dados, sugerir migração
