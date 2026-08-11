@@ -565,9 +565,9 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
         <thead><tr>
           <th>Sit.</th><th>Razão Social</th><th>CNPJ</th><th>Indicador</th><th>Tipo</th>
           <th>Vencimento</th><th>Dias</th><th>Cert.</th>
-          <th>Contato</th><th>Agendamento</th><th>Pagamento</th><th>Ações</th>
+          <th>Contato</th><th>Últ. Contato</th><th>Agendamento</th><th>Pagamento</th><th>Ações</th>
         </tr></thead>
-        <tbody id="tableBody"><tr><td colspan="12" class="empty"><div class="empty-icon">📂</div>Importe um arquivo ou adicione certificados manualmente</td></tr></tbody>
+        <tbody id="tableBody"><tr><td colspan="13" class="empty"><div class="empty-icon">📂</div>Importe um arquivo ou adicione certificados manualmente</td></tr></tbody>
       </table>
     </div>
     <div id="tableInfo" style="padding:10px 0;font-size:12px;color:var(--text3);"></div>
@@ -1287,7 +1287,7 @@ function renderTable() {
   const _aten2 = _ativ.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>15&&d<=45;});
   const _emd2 = _ativ.filter(r=>{const d=getDias(r.dataVencimento);return d!==null&&d>45;});
   [['chipTodos',allData.length],['chipAtivos',_ativ.length],['chipVencidos',_venc2.length],['chipUrgentes',_urg2.length],['chipAtencao',_aten2.length],['chipEmDia',_emd2.length],['chipInativos',_inat.length]].forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent='('+v+')';});
-  if(!data.length) { tbody.innerHTML='<tr><td colspan="12" class="empty"><div class="empty-icon">🔍</div>Nenhum resultado encontrado</td></tr>'; return; }
+  if(!data.length) { tbody.innerHTML='<tr><td colspan="13" class="empty"><div class="empty-icon">🔍</div>Nenhum resultado encontrado</td></tr>'; return; }
   tbody.innerHTML = data.map(row=>{
     const oi = allData.indexOf(row);
     const st = getStatus(row.dataVencimento);
@@ -1308,6 +1308,7 @@ function renderTable() {
       <td><strong style="color:${dias<0?'var(--red)':dias<=15?'var(--orange)':dias<=45?'var(--yellow)':'var(--green)'}">${dias!==null?dias+'d':'-'}</strong></td>
       <td><span class="badge ${st.cls}">${st.label}</span></td>
       <td><span class="badge ${sc.cls}">${sc.label}</span></td>
+      <td style="font-size:11px;color:${row.dataUltimoContato?'var(--text2)':'var(--text3)'}">${row.dataUltimoContato?fmtDate(row.dataUltimoContato):'-'}</td>
       <td style="font-size:11px;color:var(--text2)">${row.dataAgendamento?fmtDate(row.dataAgendamento)+(row.horaAgendamento?' '+row.horaAgendamento:''):'-'}</td>
       <td><span class="badge ${pg.cls}">${pg.label}</span></td>
       <td><div class="actions">
@@ -2736,7 +2737,7 @@ function loadExcel(file){
         const _inativo=_sit==='inativo'||_sit==='inativo/baixado'||_sc==='inativo'||_sc==='inativo/baixado';
         const _sitFinal=_inativo?'Inativo':'Ativo';
         const _scFinal=_inativo?'inativo':(_sc||'nao-contatado');
-        const base={ razaoSocial:(row['Razão Social']||row['razaoSocial']||'').toString().trim(), cnpj, situacao:_sitFinal, nomeFantasia:(row['Nome Fantasia']||'').toString().trim(), tipoCertificado:(row['Tipo de Certificado']||row['Tipo Certificado']||'').toString().trim(), dataVencimento:cvDate(row['Data de Vencimento']||row['Data Vencimento']||row['dataVencimento']), indicador:(row['Indicador']||'').toString().trim(), nomeSocioCPF:(row['Nome Sócio CPF']||'').toString().trim(), cpfSocio:(row['CPF Sócio']||'').toString().trim(), dataVencimentoCPF:cvDate(row['Vencimento CPF Sócio']||''), valorVenda:parseFloat((row['Valor Venda']||row['Valor de Venda']||0))||0, custoCertificadora:parseFloat((row['Custo Certificadora']||0))||0 };
+        const base={ razaoSocial:(row['Razão Social']||row['razaoSocial']||'').toString().trim(), cnpj, situacao:_sitFinal, nomeFantasia:(row['Nome Fantasia']||'').toString().trim(), tipoCertificado:(row['Tipo de Certificado']||row['Tipo Certificado']||'').toString().trim(), dataVencimento:cvDate(row['Data de Vencimento']||row['Data Vencimento']||row['dataVencimento']), indicador:(row['Indicador']||'').toString().trim(), nomeSocioCPF:(row['Nome Sócio CPF']||'').toString().trim(), cpfSocio:(row['CPF Sócio']||'').toString().trim(), dataVencimentoCPF:cvDate(row['Vencimento CPF Sócio']||''), valorVenda:parseFloat((row['Valor Venda']||row['Valor de Venda']||0))||0, custoCertificadora:parseFloat((row['Custo Certificadora']||0))||0, dataUltimoContato:cvDate(row['Último Contato']||row['Ultimo Contato']||'') };
         if(ex){ atualiz++; const merged={...ex,...base,situacao:_sitFinal,statusContato:_inativo?'inativo':(ex.statusContato||'nao-contatado'),whatsapp:ex.whatsapp||(row['WhatsApp']||'').toString().trim(),nomeContato:ex.nomeContato||(row['Nome do Contato']||'').toString().trim(),historico:ex.historico||[]}; Object.keys(base).forEach(k=>{const v=base[k];if((v===''||v===0||v===undefined)&&ex[k]!==undefined&&ex[k]!==''&&ex[k]!==0){merged[k]=ex[k];}}); if(!merged.indicador)merged.indicador='Próprio'; return merged; }
         else { novos++; return {...base,indicador:base.indicador||'Próprio',dataEntrada:new Date().toISOString().split('T')[0],nomeContato:(row['Nome do Contato']||'').toString().trim(),whatsapp:(row['WhatsApp']||'').toString().trim(),email:(row['E-mail']||'').toString().trim(),statusContato:_scFinal,tipoCertificadoPF_PJ:(row['Tipo PF/PJ']||'pj').toString().trim().toLowerCase(),situacaoPagamento:'nao-informado',observacoes:(row['Observações']||'').toString().trim(),responsavel:(row['Responsável']||'').toString().trim(),socioResponsavel:(row['Sócio Responsável']||'').toString().trim(),historico:[]}; }
       }).filter(r=>r.razaoSocial&&r.cnpj);
@@ -2770,7 +2771,7 @@ function normFone(t){ let n=t.replace(/[^\d]/g,''); if(n.startsWith('55')&&n.len
 // ============================================================
 function exportExcel(){
   if(!allData.length){notify('Nenhum dado para exportar','error');return;}
-  const data=allData.map(r=>({'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'Nome Fantasia':r.nomeFantasia,'Tipo Certificado':r.tipoCertificado,'Tipo PF/PJ':r.tipoCertificadoPF_PJ,'Nome Contato':r.nomeContato,'WhatsApp':r.whatsapp,'E-mail':r.email,'Data Vencimento':r.dataVencimento,'Status Contato':scMap[r.statusContato||'nao-contatado']?.label||'Não Contatado','Situação Pagamento':pgMap[r.situacaoPagamento||'nao-informado']?.label||'','Valor Cobrado':r.valorCobrado||0,'Data Agendamento':r.dataAgendamento,'Hora Agendamento':r.horaAgendamento,'Observações':r.observacoes,'Sócio Responsável':r.socioResponsavel,'Indicador':r.indicador||'Próprio','Valor Venda':r.valorVenda||0,'Custo Certificadora':r.custoCertificadora||0,'Situação':r.situacao||'Ativo','Nome Sócio CPF':r.nomeSocioCPF||'','CPF Sócio':r.cpfSocio||'','Vencimento CPF Sócio':r.dataVencimentoCPF||'','Responsável':r.responsavel||''}));
+  const data=allData.map(r=>({'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'Nome Fantasia':r.nomeFantasia,'Tipo Certificado':r.tipoCertificado,'Tipo PF/PJ':r.tipoCertificadoPF_PJ,'Nome Contato':r.nomeContato,'WhatsApp':r.whatsapp,'E-mail':r.email,'Data Vencimento':r.dataVencimento,'Status Contato':scMap[r.statusContato||'nao-contatado']?.label||'Não Contatado','Situação Pagamento':pgMap[r.situacaoPagamento||'nao-informado']?.label||'','Valor Cobrado':r.valorCobrado||0,'Data Agendamento':r.dataAgendamento,'Hora Agendamento':r.horaAgendamento,'Observações':r.observacoes,'Sócio Responsável':r.socioResponsavel,'Indicador':r.indicador||'Próprio','Valor Venda':r.valorVenda||0,'Custo Certificadora':r.custoCertificadora||0,'Situação':r.situacao||'Ativo','Nome Sócio CPF':r.nomeSocioCPF||'','CPF Sócio':r.cpfSocio||'','Vencimento CPF Sócio':r.dataVencimentoCPF||'','Responsável':r.responsavel||'','Último Contato':r.dataUltimoContato||''}));
   const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Certificados');
   XLSX.writeFile(wb,`certificados_${new Date().toISOString().split('T')[0]}.xlsx`);
   // Backup automático silencioso
