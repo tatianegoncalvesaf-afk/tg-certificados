@@ -2099,7 +2099,8 @@ async function buscarCnpj(auto=false) {
   if(cnpj.length!==14&&cnpj.length!==11){ if(!auto) notify('CNPJ/CPF inválido','error'); return; }
   lastCnpj=cnpj;
   const hint = document.getElementById('cnpjHint');
-  hint.innerHTML='<span style="color:var(--accent)">⏳ Consultando Receita Federal...</span>';
+  if(cnpj.length===11){ hint.innerHTML='<span style="color:var(--text3)">ℹ️ CPF: consulta automática não disponível (dados protegidos pela LGPD) — preencha manualmente</span>'; return; }
+  hint.innerHTML='<span style="color:var(--accent)">⏳ Consultando bases públicas...</span>';
   // Função para extrair dados normalizados de qualquer API
   function extrairDados(data, fonte) {
     if(!data) return null;
@@ -2118,6 +2119,20 @@ async function buscarCnpj(auto=false) {
       socio = qs.length>0 ? (qs[0].nome||'') : '';
       email = data.estabelecimento?.email||data.email||'';
       telefone = data.estabelecimento?.ddd1&&data.estabelecimento?.telefone1 ? data.estabelecimento.ddd1+data.estabelecimento.telefone1 : '';
+    } else if(fonte==='opencnpj') {
+      razao = data.razao_social||'';
+      fantasia = data.nome_fantasia||'';
+      const qs = data.QSA||data.qsa||[];
+      socio = qs.length>0 ? (qs[0].nome_socio||qs[0].nome||'') : '';
+      email = data.email||'';
+      telefone = data.telefones&&data.telefones.length>0 ? ((data.telefones[0].ddd||'')+(data.telefones[0].numero||'')).replace(/[^\d]/g,'') : '';
+    } else if(fonte==='minhareceita') {
+      razao = data.razao_social||'';
+      fantasia = data.nome_fantasia||'';
+      const qs = data.qsa||[];
+      socio = qs.length>0 ? (qs[0].nome_socio||qs[0].nome||'') : '';
+      email = data.email||'';
+      telefone = data.ddd_telefone_1 ? (data.ddd_telefone_1).replace(/[^\d]/g,'') : '';
     } else if(fonte==='receitaws') {
       razao = data.nome||'';
       fantasia = data.fantasia||'';
@@ -2129,7 +2144,9 @@ async function buscarCnpj(auto=false) {
   }
   // Lista de APIs em ordem de prioridade
   const apis = [
+    { url: `https://api.opencnpj.org/${cnpj}`, fonte: 'opencnpj' },
     { url: `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, fonte: 'brasilapi' },
+    { url: `https://minhareceita.org/${cnpj}`, fonte: 'minhareceita' },
     { url: `https://publica.cnpj.ws/cnpj/${cnpj}`, fonte: 'cnpjws' },
     { url: `https://receitaws.com.br/v1/cnpj/${cnpj}`, fonte: 'receitaws' },
   ];
@@ -2156,7 +2173,7 @@ async function buscarCnpj(auto=false) {
     }
     hint.innerHTML=`<span style="color:var(--green)">✅ Dados carregados! (${fonteUsada})</span>`;
   } else {
-    hint.innerHTML='<span style="color:var(--orange)">⚠️ Não encontrado nas APIs — verifique o CNPJ ou preencha manualmente</span>';
+    hint.innerHTML='<span style="color:var(--orange)">⚠️ CNPJ não encontrado nas 5 bases públicas consultadas. Se a empresa foi aberta há pouco tempo, ainda não consta nos dados abertos da Receita (demora 1-2 meses) — preencha manualmente</span>';
   }
 }
 
