@@ -2806,7 +2806,7 @@ function openRelatorios(){ openModal('relModal'); }
 function gerarRel(tipo){
   if(!allData.length){notify('Sem dados','error');return;}
   const hoje=new Date().toISOString().split('T')[0];
-  const fmt=r=>({'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'WhatsApp':r.whatsapp,'Nome Contato':r.nomeContato,'Vencimento':fmtDate(r.dataVencimento),'Dias p/ Vencer':getDias(r.dataVencimento)??'','Status Cert.':getStatus(r.dataVencimento).label,'Status Contato':scMap[r.statusContato||'nao-contatado']?.label,'Pagamento':pgMap[r.situacaoPagamento||'nao-informado']?.label,'Observações':r.observacoes});
+  const fmt=r=>({'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'WhatsApp':r.whatsapp,'Nome Contato':r.nomeContato,'Vencimento':fmtDate(r.dataVencimento),'Dias p/ Vencer':getDias(r.dataVencimento)??'','Status Cert.':getStatus(r.dataVencimento).label,'Status Contato':scMap[r.statusContato||'nao-contatado']?.label,'Último Contato':r.dataUltimoContato?fmtDate(r.dataUltimoContato):'','Pagamento':pgMap[r.situacaoPagamento||'nao-informado']?.label,'Observações':r.observacoes});
   const map={
     'vencidos':['Vencidos',allData.filter(r=>!chkInativo(r)&&getDias(r.dataVencimento)!==null&&getDias(r.dataVencimento)<0)],
     'urgentes':['Urgentes',allData.filter(r=>{ const d=getDias(r.dataVencimento);return r.statusContato!=='inativo'&&d!==null&&d>=0&&d<=15;})],
