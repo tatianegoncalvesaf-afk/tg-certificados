@@ -559,6 +559,7 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
       <span class="chip" data-fc="renovando" onclick="setFilterC('renovando',this)">🔄 Renovando</span>
       <span class="chip" data-fc="concluido" onclick="setFilterC('concluido',this)">✔️ Concluído</span>
       <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Buscar por nome ou CNPJ..." oninput="doSearch(this.value)"/></div>
+      <button class="btn btn-sm" onclick="msgAgrupada()" title="Gera uma única mensagem com todos os certificados da lista filtrada (ex.: empresas do mesmo sócio)" style="white-space:nowrap">👥 Msg Agrupada</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -1264,6 +1265,33 @@ function chkInativo(r){
   const sit=(r.situacao||'').toLowerCase();
   return sc==='inativo'||sit==='inativo'||sit==='inativo/baixado';
 }
+let lastRendered = [];
+function msgAgrupada(){
+  const rows = (lastRendered||[]).filter(r=>!chkInativo(r));
+  if(rows.length < 2){ notify('Filtre/pesquise primeiro para listar 2+ empresas (ex.: busque o nome do sócio)','error'); return; }
+  if(rows.length > 15){ notify('Lista muito grande ('+rows.length+'). Refine a busca para as empresas do sócio.','error'); return; }
+  const comZap = rows.find(r=>r.whatsapp);
+  if(!comZap){ notify('Nenhum WhatsApp cadastrado nesses registros','error'); return; }
+  // ordena por urgência (dias asc)
+  const ord = [...rows].sort((a,b)=>{const da=getDias(a.dataVencimento),db=getDias(b.dataVencimento);return (da===null?9999:da)-(db===null?9999:db);});
+  const linhas = ord.map(r=>{
+    const d = getDias(r.dataVencimento);
+    const nm = r.razaoSocial||'';
+    if(d===null) return `▫️ *${nm}*`;
+    if(d<0) return `⚠️ *${nm}* — vencido desde ${fmtDate(r.dataVencimento)} (${Math.abs(d)} ${Math.abs(d)===1?'dia':'dias'})`;
+    if(d===0) return `⚠️ *${nm}* — vence *hoje* (${fmtDate(r.dataVencimento)})`;
+    return `📅 *${nm}* — vence em ${fmtDate(r.dataVencimento)} (faltam ${d} ${d===1?'dia':'dias'})`;
+  }).join('\n');
+  const socio = (comZap.nomeContato||comZap.socioResponsavel||'').split(' ')[0];
+  const saud = socio ? `Olá, ${socio}! Tudo bem? 😊` : `Olá! Tudo bem? 😊`;
+  const msg = `${saud}\n\nAqui é a Tatiane, da *TG Certificados Digitais*. Estou entrando em contato sobre a renovação dos certificados digitais das suas empresas:\n\n${linhas}\n\nPodemos aproveitar e renovar tudo de uma vez? Assim garantimos que nenhuma delas fique com o certificado parado. 🔐\n\nQualquer dúvida, é só chamar!`;
+  const hoje = new Date().toISOString().split('T')[0];
+  rows.forEach(r=>{ r.statusContato='contatado'; r.dataUltimoContato=hoje; });
+  save();
+  window.open(`https://wa.me/${comZap.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank');
+  renderTable();
+  notify(`✅ Mensagem agrupada com ${rows.length} empresas — todas marcadas como Contatado`,'success');
+}
 function renderTable() {
   let data = allData;
   if(currentFilter==='inativo') {
@@ -1295,6 +1323,7 @@ function renderTable() {
       return false;
     });
   }
+  lastRendered = data;
   const tbody = document.getElementById('tableBody');
   document.getElementById('tableInfo').textContent = `Exibindo ${data.length} de ${allData.length} registros`;
   // Atualiza contadores nos chips
