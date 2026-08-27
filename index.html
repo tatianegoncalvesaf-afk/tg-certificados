@@ -1279,11 +1279,12 @@ function msgAgrupada(){
   const linhas = ord.map(r=>{
     const d = getDias(r.dataVencimento);
     const nm = r.razaoSocial||'';
-    if(d===null) return `▫️ *${nm}*`;
-    if(d<0) return `⚠️ *${nm}* — vencido desde ${fmtDate(r.dataVencimento)} (${Math.abs(d)} ${Math.abs(d)===1?'dia':'dias'})`;
-    if(d===0) return `⚠️ *${nm}* — vence *hoje* (${fmtDate(r.dataVencimento)})`;
-    return `📅 *${nm}* — vence em ${fmtDate(r.dataVencimento)} (faltam ${d} ${d===1?'dia':'dias'})`;
-  }).join('\n');
+    const doc = r.cnpj ? `\nCNPJ ${r.cnpj}` : '';
+    if(d===null) return `*${nm}*${doc}`;
+    if(d<0) return `*${nm}*${doc}\nVencido desde ${fmtDate(r.dataVencimento)} (${Math.abs(d)} ${Math.abs(d)===1?'dia':'dias'})`;
+    if(d===0) return `*${nm}*${doc}\nVence *hoje* (${fmtDate(r.dataVencimento)})`;
+    return `*${nm}*${doc}\nVence em ${fmtDate(r.dataVencimento)} (faltam ${d} ${d===1?'dia':'dias'})`;
+  }).join('\n\n');
   const socio = (comZap.nomeContato||comZap.socioResponsavel||'').split(' ')[0];
   const saud = socio ? `Olá, ${socio}! Tudo bem? 😊` : `Olá! Tudo bem? 😊`;
   const msg = `${saud}\n\nAqui é a Tatiane, da *TG Certificados Digitais*. Estou entrando em contato sobre a renovação dos certificados digitais das suas empresas:\n\n${linhas}\n\nPodemos aproveitar e renovar tudo de uma vez? Assim garantimos que nenhuma delas fique com o certificado parado. 🔐\n\nQualquer dúvida, é só chamar!`;
