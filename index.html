@@ -1270,7 +1270,7 @@ function chkInativo(r){
 let lastRendered = [];
 function msgAgrupada(){
   const rows = (lastRendered||[]).filter(r=>!chkInativo(r));
-  const _tt = r=>(r.tipoPfPj||'').toLowerCase().trim();
+  const _tt = r=>(r.tipoCertificadoPF_PJ||r.tipoPFPJ||'').toLowerCase().trim();
   const _dd = r=>(r.cnpj||'').replace(/[^\d]/g,'');
   const _combo = r=>(_tt(r).includes('pf')||_dd(r).length===11) && (_tt(r).includes('pj')||_dd(r).length===14);
   if(rows.length < 2 && !(rows.length===1 && _combo(rows[0]))){ notify('Filtre/pesquise primeiro para listar 2+ registros, ou um cliente com empresa + e-CPF','error'); return; }
@@ -1279,7 +1279,7 @@ function msgAgrupada(){
   if(!comZap){ notify('Nenhum WhatsApp cadastrado nesses registros','error'); return; }
   // ordena por urgência (dias asc)
   const ord = [...rows].sort((a,b)=>{const da=getDias(a.dataVencimento),db=getDias(b.dataVencimento);return (da===null?9999:da)-(db===null?9999:db);});
-  const _t = r=>(r.tipoPfPj||'').toLowerCase().trim();
+  const _t = r=>(r.tipoCertificadoPF_PJ||r.tipoPFPJ||'').toLowerCase().trim();
   const _dg = r=>(r.cnpj||'').replace(/[^\d]/g,'');
   const temPFr = r=>_t(r).includes('pf') || _dg(r).length===11;   // registro inclui e-CPF
   const temPJr = r=>_t(r).includes('pj') || _dg(r).length===14;   // registro inclui e-CNPJ
@@ -1298,8 +1298,9 @@ function msgAgrupada(){
     if(d===0) return `*${nm}*${doc}\nVence *hoje* (${fmtDate(r.dataVencimento)})`;
     return `*${nm}*${doc}\nVence em ${fmtDate(r.dataVencimento)} (faltam ${d} ${d===1?'dia':'dias'})`;
   }).join('\n\n');
-  const socio = (comZap.nomeContato||comZap.socioResponsavel||'').split(' ')[0];
-  const saud = socio ? `Olá, ${socio}! Tudo bem? 😊` : `Olá! Tudo bem? 😊`;
+  let socio = (comZap.socioResponsavel||comZap.nomeContato||'').trim().split(/\s+/)[0]||'';
+  if(socio) socio = socio.charAt(0).toUpperCase()+socio.slice(1).toLowerCase();
+  const saud = socio ? `Olá, ${socio}! Tudo bem?` : `Olá! Tudo bem?`;
   const intro = (temPF && temPJ) ? 'a renovação dos certificados digitais da sua empresa e do seu e-CPF'
               : (temPF && !temPJ) ? 'a renovação dos seus certificados digitais'
               : 'a renovação dos certificados digitais das suas empresas';
