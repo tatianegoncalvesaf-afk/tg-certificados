@@ -1270,7 +1270,10 @@ function chkInativo(r){
 let lastRendered = [];
 function msgAgrupada(){
   const rows = (lastRendered||[]).filter(r=>!chkInativo(r));
-  if(rows.length < 2){ notify('Filtre/pesquise primeiro para listar 2+ registros (ex.: busque o nome do sócio)','error'); return; }
+  const _tt = r=>(r.tipoPfPj||'').toLowerCase().trim();
+  const _dd = r=>(r.cnpj||'').replace(/[^\d]/g,'');
+  const _combo = r=>(_tt(r).includes('pf')||_dd(r).length===11) && (_tt(r).includes('pj')||_dd(r).length===14);
+  if(rows.length < 2 && !(rows.length===1 && _combo(rows[0]))){ notify('Filtre/pesquise primeiro para listar 2+ registros, ou um cliente com empresa + e-CPF','error'); return; }
   if(rows.length > 15){ notify('Lista muito grande ('+rows.length+'). Refine a busca para os registros do sócio.','error'); return; }
   const comZap = rows.find(r=>r.whatsapp);
   if(!comZap){ notify('Nenhum WhatsApp cadastrado nesses registros','error'); return; }
