@@ -1296,7 +1296,9 @@ function msgAgrupada(){
   const fecho = (temPF && temPJ) ? 'Podemos aproveitar e renovar tudo de uma vez? Assim garantimos que nem a empresa nem o seu e-CPF fiquem parados.'
               : (temPF && !temPJ) ? 'Podemos aproveitar e renovar tudo de uma vez? Assim garantimos que nenhum deles fique parado.'
               : 'Podemos aproveitar e renovar tudo de uma vez? Assim garantimos que nenhuma delas fique com o certificado parado.';
-  const msg = `${saud}\n\nAqui é a Tatiane, da *TG Certificados Digitais*. Estou entrando em contato sobre ${intro}:\n\n${linhas}\n\n${fecho}\n\nQualquer dúvida, é só chamar!`;
+  const _isAlm = r=>{const i=(r.indicador||'').trim().toLowerCase(); return i.includes('almeida')||i.includes('alameida');};
+  const parceria = ord.some(_isAlm) ? ', somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais' : '';
+  const msg = `${saud}\n\nAqui é a Tatiane, da *TG Certificados Digitais*${parceria}. Estou entrando em contato sobre ${intro}:\n\n${linhas}\n\n${fecho}\n\nQualquer dúvida, é só chamar!`;
   const hoje = new Date().toISOString().split('T')[0];
   rows.forEach(r=>{ r.statusContato='contatado'; r.dataUltimoContato=hoje; });
   save();
