@@ -1276,13 +1276,20 @@ function msgAgrupada(){
   if(!comZap){ notify('Nenhum WhatsApp cadastrado nesses registros','error'); return; }
   // ordena por urgência (dias asc)
   const ord = [...rows].sort((a,b)=>{const da=getDias(a.dataVencimento),db=getDias(b.dataVencimento);return (da===null?9999:da)-(db===null?9999:db);});
-  const ehPF = r=>{ const t=(r.tipoPfPj||'').toLowerCase().trim(); const dg=(r.cnpj||'').replace(/[^\d]/g,''); return t==='pf' || (t!=='pj' && dg.length===11); };
-  const temPF = ord.some(ehPF), temPJ = ord.some(r=>!ehPF(r));
+  const _t = r=>(r.tipoPfPj||'').toLowerCase().trim();
+  const _dg = r=>(r.cnpj||'').replace(/[^\d]/g,'');
+  const temPFr = r=>_t(r).includes('pf') || _dg(r).length===11;   // registro inclui e-CPF
+  const temPJr = r=>_t(r).includes('pj') || _dg(r).length===14;   // registro inclui e-CNPJ
+  const ehPF = r=>temPFr(r) && !temPJr(r);                        // registro é SÓ e-CPF
+  const ehAmbos = r=>temPFr(r) && temPJr(r);                      // empresa + e-CPF do sócio
+  const temPF = ord.some(temPFr), temPJ = ord.some(temPJr);
   const linhas = ord.map(r=>{
     const d = getDias(r.dataVencimento);
     const nm = r.razaoSocial||'';
     const pf = ehPF(r);
-    const doc = r.cnpj ? `\n${pf?'e-CPF':'e-CNPJ'} ${r.cnpj}` : '';
+    const soc = (r.socioResponsavel||'').trim();
+    let doc = r.cnpj ? `\n${pf?'e-CPF':'e-CNPJ'} ${r.cnpj}` : '';
+    if(ehAmbos(r)) doc += `\n+ e-CPF${soc?' de '+soc:' do sócio'}`;
     if(d===null) return `*${nm}*${doc}`;
     if(d<0) return `*${nm}*${doc}\nVencido desde ${fmtDate(r.dataVencimento)} (${Math.abs(d)} ${Math.abs(d)===1?'dia':'dias'})`;
     if(d===0) return `*${nm}*${doc}\nVence *hoje* (${fmtDate(r.dataVencimento)})`;
