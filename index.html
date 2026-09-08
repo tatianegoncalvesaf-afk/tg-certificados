@@ -558,7 +558,7 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
       <span class="chip" data-fc="agendado" onclick="setFilterC('agendado',this)">📅 Agendado</span>
       <span class="chip" data-fc="renovando" onclick="setFilterC('renovando',this)">🔄 Renovando</span>
       <span class="chip" data-fc="concluido" onclick="setFilterC('concluido',this)">✔️ Concluído</span>
-      <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Buscar por nome ou CNPJ..." oninput="doSearch(this.value)"/></div>
+      <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Buscar por nome, CNPJ, sócio ou indicador..." oninput="doSearch(this.value)"/></div>
       <button class="btn btn-sm" onclick="msgAgrupada()" title="Gera uma única mensagem com todos os certificados da lista filtrada (ex.: empresas do mesmo sócio)" style="white-space:nowrap">👥 Msg Agrupada</button>
     </div>
     <div class="table-wrap">
@@ -1344,6 +1344,8 @@ function renderTable() {
       if((r.nomeContato||'').toLowerCase().includes(s)) return true;
       if((r.socioResponsavel||'').toLowerCase().includes(s)) return true;
       if((r.nomeFantasia||'').toLowerCase().includes(s)) return true;
+      if((r.indicador||'').toLowerCase().includes(s)) return true;
+      if(s.length>3 && 'almeida'.includes(s) && (r.indicador||'').toLowerCase().includes('alameida')) return true;
       if(sDigits && (r.cnpj||'').replace(/[^\d]/g,'').includes(sDigits)) return true;
       return false;
     });
