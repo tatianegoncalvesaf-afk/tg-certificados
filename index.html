@@ -750,6 +750,10 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
       <div class="form-group"><label>Data de Vencimento *</label><input type="date" id="fVenc"/></div>
       <div class="form-group"><label>Sócio Responsável</label><input type="text" id="fSocio"/></div>
     </div>
+    <div class="form-row">
+      <div class="form-group"><label>Data da Situação Cadastral</label><input type="date" id="fDataSit"/></div>
+      <div class="form-group"></div>
+    </div>
     <div class="form-section">
       <div class="form-section-title">Tipo de Certificado (PF/PJ)</div>
       <div class="option-grid">
@@ -1269,6 +1273,7 @@ function chkInativo(r){
   return sc==='inativo'||sit==='inativo'||sit==='inativo/baixado';
 }
 let lastRendered = [];
+function primeiraEmissao(r){ const d=r&&r.dataSituacaoCadastral; if(!d) return false; const dias=Math.floor((new Date()-new Date(d+'T00:00:00'))/86400000); return dias>=0 && dias<=90; }
 let currentIndicador = '';
 function normInd(v){ let s=(v||'').toString().trim().toLowerCase(); if(!s) return 'próprio'; if(s==='alameida') s='almeida'; if(s==='proprio') s='próprio'; return s; }
 function popularFiltroIndicador(){
@@ -1321,7 +1326,7 @@ function msgAgrupada(){
               : (temPF && !temPJ) ? 'Podemos aproveitar e renovar tudo de uma vez? Assim garantimos que nenhum deles fique parado.'
               : 'Podemos aproveitar e renovar tudo de uma vez? Assim garantimos que nenhuma delas fique com o certificado parado.';
   const _isAlm = r=>{const i=(r.indicador||'').trim().toLowerCase(); return i.includes('almeida')||i.includes('alameida');};
-  const _isSig = r=>(r.indicador||'').trim().toLowerCase().includes('sigma');
+  const _isSig = r=>(r.indicador||'').trim().toLowerCase().includes('sigma') && primeiraEmissao(r);
   const _a = ord.some(_isAlm), _s = ord.some(_isSig);
   const parceria = (_a && _s) ? ', somos parceiros do escritório Almeida Contabilidade e da Sigma Assessoria Contábil, responsável pelo setor de certificados digitais'
                  : _s ? ', somos parceiros da Sigma Assessoria Contábil e responsável pelo setor de certificados digitais'
@@ -1986,7 +1991,7 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 // FORM — ADD/EDIT
 // ============================================================
 function resetForm() {
-  ['fRazao','fCnpj','fFantasia','fContato','fWa','fEmail','fVenc','fSocio','fDUC','fResp','fObs','fAgedData','fAgedHora','fValor'].forEach(id=>document.getElementById(id).value='');
+  ['fRazao','fCnpj','fFantasia','fContato','fWa','fEmail','fVenc','fSocio','fDataSit','fDUC','fResp','fObs','fAgedData','fAgedHora','fValor'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fTipoCert').value='';
   document.getElementById('fTipo').value='pj';
   document.getElementById('fSC').value='nao-contatado';
@@ -2017,6 +2022,7 @@ function openEdit(i) {
   document.getElementById('fEmail').value=r.email||'';
   document.getElementById('fVenc').value=r.dataVencimento||'';
   document.getElementById('fSocio').value=r.socioResponsavel||'';
+  document.getElementById('fDataSit').value=r.dataSituacaoCadastral||'';
   document.getElementById('fDUC').value=r.dataUltimoContato||'';
   document.getElementById('fResp').value=r.responsavel||'';
   document.getElementById('fObs').value=r.observacoes||'';
@@ -2070,6 +2076,7 @@ function saveForm() {
     nomeContato:document.getElementById('fContato').value, whatsapp:document.getElementById('fWa').value,
     email:document.getElementById('fEmail').value, dataVencimento:venc,
     socioResponsavel:document.getElementById('fSocio').value,
+    dataSituacaoCadastral:document.getElementById('fDataSit').value,
     statusContato:document.getElementById('fSC').value,
     tipoCertificadoPF_PJ:document.getElementById('fTipo').value,
     situacaoPagamento:document.getElementById('fPG').value,
@@ -2199,6 +2206,8 @@ async function buscarCnpj(auto=false) {
   function extrairDados(data, fonte) {
     if(!data) return null;
     let razao='', fantasia='', socio='', email='', telefone='';
+    const _nd = v=>{ if(!v) return ''; v=String(v).trim(); let m=v.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[1]+'-'+m[2]+'-'+m[3]; m=v.match(/^(\d{2})\/(\d{2})\/(\d{4})/); if(m) return m[3]+'-'+m[2]+'-'+m[1]; return ''; };
+    const dataSit = _nd(data.data_situacao_cadastral || data.estabelecimento?.data_situacao_cadastral || data.data_situacao || '');
     if(fonte==='brasilapi') {
       razao = data.razao_social||'';
       fantasia = data.nome_fantasia||'';
@@ -2234,7 +2243,7 @@ async function buscarCnpj(auto=false) {
       email = data.email||'';
       telefone = data.telefone ? data.telefone.replace(/[^\d]/g,'') : '';
     }
-    return { razao, fantasia, socio, email, telefone };
+    return { razao, fantasia, socio, email, telefone, dataSit };
   }
   // Lista de APIs em ordem de prioridade
   const apis = [
@@ -2260,6 +2269,7 @@ async function buscarCnpj(auto=false) {
     if(dados.razao) document.getElementById('fRazao').value = dados.razao;
     if(dados.fantasia) document.getElementById('fFantasia').value = dados.fantasia;
     if(dados.socio) document.getElementById('fSocio').value = dados.socio;
+    if(dados.dataSit) document.getElementById('fDataSit').value = dados.dataSit;
     if(dados.email && !document.getElementById('fEmail').value) document.getElementById('fEmail').value = dados.email;
     if(dados.telefone && !document.getElementById('fWa').value) {
       const tel = dados.telefone.length>=10 ? '55'+dados.telefone : dados.telefone;
@@ -2348,7 +2358,7 @@ function gerarMsg(tmpl, row) {
   // Menção à parceria Almeida SOMENTE quando o Indicador for Almeida
   const indicador = (row.indicador||'').trim().toLowerCase();
   const isAlmeida = indicador.includes('almeida') || indicador.includes('alameida');
-  const isSigma = indicador.includes('sigma');
+  const isSigma = indicador.includes('sigma') && primeiraEmissao(row);
   if(isSigma) {
     msg = msg.replace(', somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais', ', somos parceiros da Sigma Assessoria Contábil e responsável pelo setor de certificados digitais');
   } else if(!isAlmeida) {
@@ -2842,7 +2852,7 @@ function loadExcel(file){
         const _inativo=_sit==='inativo'||_sit==='inativo/baixado'||_sc==='inativo'||_sc==='inativo/baixado';
         const _sitFinal=_inativo?'Inativo':'Ativo';
         const _scFinal=_inativo?'inativo':(_sc||'nao-contatado');
-        const base={ razaoSocial:(row['Razão Social']||row['razaoSocial']||'').toString().trim(), cnpj, situacao:_sitFinal, nomeFantasia:(row['Nome Fantasia']||'').toString().trim(), tipoCertificado:(row['Tipo de Certificado']||row['Tipo Certificado']||'').toString().trim(), dataVencimento:cvDate(row['Data de Vencimento']||row['Data Vencimento']||row['dataVencimento']), indicador:(row['Indicador']||'').toString().trim(), nomeSocioCPF:(row['Nome Sócio CPF']||'').toString().trim(), cpfSocio:(row['CPF Sócio']||'').toString().trim(), dataVencimentoCPF:cvDate(row['Vencimento CPF Sócio']||''), valorVenda:parseFloat((row['Valor Venda']||row['Valor de Venda']||0))||0, custoCertificadora:parseFloat((row['Custo Certificadora']||0))||0, dataUltimoContato:cvDate(row['Último Contato']||row['Ultimo Contato']||'') };
+        const base={ razaoSocial:(row['Razão Social']||row['razaoSocial']||'').toString().trim(), cnpj, situacao:_sitFinal, nomeFantasia:(row['Nome Fantasia']||'').toString().trim(), tipoCertificado:(row['Tipo de Certificado']||row['Tipo Certificado']||'').toString().trim(), dataVencimento:cvDate(row['Data de Vencimento']||row['Data Vencimento']||row['dataVencimento']), indicador:(row['Indicador']||'').toString().trim(), nomeSocioCPF:(row['Nome Sócio CPF']||'').toString().trim(), cpfSocio:(row['CPF Sócio']||'').toString().trim(), dataVencimentoCPF:cvDate(row['Vencimento CPF Sócio']||''), valorVenda:parseFloat((row['Valor Venda']||row['Valor de Venda']||0))||0, custoCertificadora:parseFloat((row['Custo Certificadora']||0))||0, dataUltimoContato:cvDate(row['Último Contato']||row['Ultimo Contato']||''), dataSituacaoCadastral:cvDate(row['Data Situação Cadastral']||row['Data da Situação Cadastral']||'') };
         if(ex){ atualiz++; const merged={...ex,...base,situacao:_sitFinal,statusContato:_inativo?'inativo':(ex.statusContato||'nao-contatado'),whatsapp:ex.whatsapp||(row['WhatsApp']||'').toString().trim(),nomeContato:ex.nomeContato||(row['Nome do Contato']||'').toString().trim(),historico:ex.historico||[]}; Object.keys(base).forEach(k=>{const v=base[k];if((v===''||v===0||v===undefined)&&ex[k]!==undefined&&ex[k]!==''&&ex[k]!==0){merged[k]=ex[k];}}); if(!merged.indicador)merged.indicador='Próprio'; return merged; }
         else { novos++; return {...base,indicador:base.indicador||'Próprio',dataEntrada:new Date().toISOString().split('T')[0],nomeContato:(row['Nome do Contato']||'').toString().trim(),whatsapp:(row['WhatsApp']||'').toString().trim(),email:(row['E-mail']||'').toString().trim(),statusContato:_scFinal,tipoCertificadoPF_PJ:(row['Tipo PF/PJ']||'pj').toString().trim().toLowerCase(),situacaoPagamento:'nao-informado',observacoes:(row['Observações']||'').toString().trim(),responsavel:(row['Responsável']||'').toString().trim(),socioResponsavel:(row['Sócio Responsável']||'').toString().trim(),historico:[]}; }
       }).filter(r=>r.razaoSocial&&r.cnpj);
@@ -2876,7 +2886,7 @@ function normFone(t){ let n=t.replace(/[^\d]/g,''); if(n.startsWith('55')&&n.len
 // ============================================================
 function exportExcel(){
   if(!allData.length){notify('Nenhum dado para exportar','error');return;}
-  const data=allData.map(r=>({'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'Nome Fantasia':r.nomeFantasia,'Tipo Certificado':r.tipoCertificado,'Tipo PF/PJ':r.tipoCertificadoPF_PJ,'Nome Contato':r.nomeContato,'WhatsApp':r.whatsapp,'E-mail':r.email,'Data Vencimento':r.dataVencimento,'Status Contato':scMap[r.statusContato||'nao-contatado']?.label||'Não Contatado','Situação Pagamento':pgMap[r.situacaoPagamento||'nao-informado']?.label||'','Valor Cobrado':r.valorCobrado||0,'Data Agendamento':r.dataAgendamento,'Hora Agendamento':r.horaAgendamento,'Observações':r.observacoes,'Sócio Responsável':r.socioResponsavel,'Indicador':r.indicador||'Próprio','Valor Venda':r.valorVenda||0,'Custo Certificadora':r.custoCertificadora||0,'Situação':r.situacao||'Ativo','Nome Sócio CPF':r.nomeSocioCPF||'','CPF Sócio':r.cpfSocio||'','Vencimento CPF Sócio':r.dataVencimentoCPF||'','Responsável':r.responsavel||'','Último Contato':r.dataUltimoContato||''}));
+  const data=allData.map(r=>({'Razão Social':r.razaoSocial,'CNPJ':r.cnpj,'Nome Fantasia':r.nomeFantasia,'Tipo Certificado':r.tipoCertificado,'Tipo PF/PJ':r.tipoCertificadoPF_PJ,'Nome Contato':r.nomeContato,'WhatsApp':r.whatsapp,'E-mail':r.email,'Data Vencimento':r.dataVencimento,'Status Contato':scMap[r.statusContato||'nao-contatado']?.label||'Não Contatado','Situação Pagamento':pgMap[r.situacaoPagamento||'nao-informado']?.label||'','Valor Cobrado':r.valorCobrado||0,'Data Agendamento':r.dataAgendamento,'Hora Agendamento':r.horaAgendamento,'Observações':r.observacoes,'Sócio Responsável':r.socioResponsavel,'Indicador':r.indicador||'Próprio','Valor Venda':r.valorVenda||0,'Custo Certificadora':r.custoCertificadora||0,'Situação':r.situacao||'Ativo','Nome Sócio CPF':r.nomeSocioCPF||'','CPF Sócio':r.cpfSocio||'','Vencimento CPF Sócio':r.dataVencimentoCPF||'','Responsável':r.responsavel||'','Último Contato':r.dataUltimoContato||'','Data Situação Cadastral':r.dataSituacaoCadastral||''}));
   const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Certificados');
   XLSX.writeFile(wb,`certificados_${new Date().toISOString().split('T')[0]}.xlsx`);
   // Backup automático silencioso
