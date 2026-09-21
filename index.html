@@ -1321,7 +1321,11 @@ function msgAgrupada(){
               : (temPF && !temPJ) ? 'Podemos aproveitar e renovar tudo de uma vez? Assim garantimos que nenhum deles fique parado.'
               : 'Podemos aproveitar e renovar tudo de uma vez? Assim garantimos que nenhuma delas fique com o certificado parado.';
   const _isAlm = r=>{const i=(r.indicador||'').trim().toLowerCase(); return i.includes('almeida')||i.includes('alameida');};
-  const parceria = ord.some(_isAlm) ? ', somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais' : '';
+  const _isSig = r=>(r.indicador||'').trim().toLowerCase().includes('sigma');
+  const _a = ord.some(_isAlm), _s = ord.some(_isSig);
+  const parceria = (_a && _s) ? ', somos parceiros do escritório Almeida Contabilidade e da Sigma Assessoria Contábil, responsável pelo setor de certificados digitais'
+                 : _s ? ', somos parceiros da Sigma Assessoria Contábil e responsável pelo setor de certificados digitais'
+                 : _a ? ', somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais' : '';
   const msg = `${saud}\n\nAqui é a Tatiane, da *TG Certificados Digitais*${parceria}. Estou entrando em contato sobre ${intro}:\n\n${linhas}\n\n${fecho}\n\nQualquer dúvida, é só chamar!`;
   const hoje = new Date().toISOString().split('T')[0];
   rows.forEach(r=>{ r.statusContato='contatado'; r.dataUltimoContato=hoje; });
@@ -2344,7 +2348,10 @@ function gerarMsg(tmpl, row) {
   // Menção à parceria Almeida SOMENTE quando o Indicador for Almeida
   const indicador = (row.indicador||'').trim().toLowerCase();
   const isAlmeida = indicador.includes('almeida') || indicador.includes('alameida');
-  if(!isAlmeida) {
+  const isSigma = indicador.includes('sigma');
+  if(isSigma) {
+    msg = msg.replace(', somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais', ', somos parceiros da Sigma Assessoria Contábil e responsável pelo setor de certificados digitais');
+  } else if(!isAlmeida) {
     msg = msg.replace(', somos parceiros do escritório Almeida Contabilidade e responsável pelo setor de certificados digitais','');
   }
   msg = msg.replace(/Vence em:/g,dvLabel+':');
