@@ -1311,7 +1311,8 @@ function msgAgrupada(){
     const soc = (r.socioResponsavel||'').trim();
     let doc = r.cnpj ? `\n${pf?'e-CPF':'e-CNPJ'} ${r.cnpj}` : '';
     if(ehAmbos(r)) doc += `\n+ e-CPF${soc?' de '+soc:' do sócio'}`;
-    if(d===null) return `*${nm}*${doc}`;
+    const _iv=(r.indicador||'').toLowerCase();
+    if(d===null || _iv.includes('sigma') || _iv.includes('dgn')) return `*${nm}*${doc}`;
     if(d<0) return `*${nm}*${doc}\nVencido desde ${fmtDate(r.dataVencimento)} (${Math.abs(d)} ${Math.abs(d)===1?'dia':'dias'})`;
     if(d===0) return `*${nm}*${doc}\nVence *hoje* (${fmtDate(r.dataVencimento)})`;
     return `*${nm}*${doc}\nVence em ${fmtDate(r.dataVencimento)} (faltam ${d} ${d===1?'dia':'dias'})`;
@@ -2333,6 +2334,9 @@ function gerarMsg(tmpl, row) {
   const key = tipos.includes('pf')&&tipos.includes('pj')?'ambos':tipos.includes('pf')?'pf':'pj';
   const tpl = msgTemplates[tmpl]||msgTemplates['primeiro-contato'];
   let msg = tpl[key]||tpl.pj||'';
+  const _indV = (row.indicador||'').toLowerCase();
+  const semVenc = _indV.includes('sigma') || _indV.includes('dgn');
+  if(semVenc){ msg = msg.replace(/Vence em: {{dataVencimento}}/g,'§SEMVENC§').replace(/{{statusVencimento}}/g,'§SEMVENC§'); }
   const dv = row.dataVencimento;
   const diasR = getDias(dv);
   const dvLabel = diasR!==null&&diasR<0?'Vencido em':diasR===0?'Venceu hoje':'Vencimento';
@@ -2367,6 +2371,7 @@ function gerarMsg(tmpl, row) {
   msg = msg.replace(/Vence em:/g,dvLabel+':');
   // Converter \n literal para quebra de linha real
   msg = msg.replace(/\\n/g,'\n');
+  if(semVenc){ msg = msg.split('\n').filter(l=>!l.includes('§SEMVENC§')).join('\n').replace(/\n{3,}/g,'\n\n'); }
   return msg;
 }
 function openMsg(i) {
