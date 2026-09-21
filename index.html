@@ -559,6 +559,7 @@ body.tema-claro tr:hover td{background:rgba(45,106,224,0.05);}
       <span class="chip" data-fc="renovando" onclick="setFilterC('renovando',this)">🔄 Renovando</span>
       <span class="chip" data-fc="concluido" onclick="setFilterC('concluido',this)">✔️ Concluído</span>
       <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Buscar por nome, CNPJ, sócio ou indicador..." oninput="doSearch(this.value)"/></div>
+      <select id="filtroIndicador" onchange="currentIndicador=this.value;renderTable()" title="Filtrar por indicador" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;font-family:inherit"><option value="">Indicador: Todos</option></select>
       <button class="btn btn-sm" onclick="msgAgrupada()" title="Gera uma única mensagem com todos os certificados da lista filtrada (ex.: empresas do mesmo sócio)" style="white-space:nowrap">👥 Msg Agrupada</button>
     </div>
     <div class="table-wrap">
@@ -1268,6 +1269,18 @@ function chkInativo(r){
   return sc==='inativo'||sit==='inativo'||sit==='inativo/baixado';
 }
 let lastRendered = [];
+let currentIndicador = '';
+function normInd(v){ let s=(v||'').toString().trim().toLowerCase(); if(!s) return 'próprio'; if(s==='alameida') s='almeida'; if(s==='proprio') s='próprio'; return s; }
+function popularFiltroIndicador(){
+  const sel=document.getElementById('filtroIndicador'); if(!sel) return;
+  const cont={}; allData.forEach(r=>{const k=normInd(r.indicador); cont[k]=(cont[k]||0)+1;});
+  const chaves=Object.keys(cont).sort();
+  const sig=chaves.map(k=>k+cont[k]).join('|');
+  if(sel.dataset.sig===sig) return;
+  sel.dataset.sig=sig;
+  sel.innerHTML='<option value="">Indicador: Todos</option>'+chaves.map(k=>`<option value="${k}">${k.charAt(0).toUpperCase()+k.slice(1)} (${cont[k]})</option>`).join('');
+  sel.value=currentIndicador;
+}
 function msgAgrupada(){
   const rows = (lastRendered||[]).filter(r=>!chkInativo(r));
   const _tt = r=>(r.tipoCertificadoPF_PJ||r.tipoPFPJ||'').toLowerCase().trim();
@@ -1335,6 +1348,8 @@ function renderTable() {
     data = data.filter(r => getStatus(r.dataVencimento).key === currentFilter);
     if(currentFilterC!=='todos') data = data.filter(r=>(r.statusContato||'nao-contatado')===currentFilterC);
   }
+  popularFiltroIndicador();
+  if(currentIndicador) data = data.filter(r=>normInd(r.indicador)===currentIndicador);
   if(currentSearch) {
     const s = currentSearch.toLowerCase();
     const sDigits = s.replace(/[^\d]/g,'');
